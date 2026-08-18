@@ -1,72 +1,139 @@
 import os
+import re
 import joblib
 import numpy as np
 from typing import Tuple, Optional
 
-# Chemins vers les artefacts ML
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-MODELE_PATH = os.path.join(DATA_DIR, "modele.pkl")
-VECTORIZER_PATH = os.path.join(DATA_DIR, "vectorizer.pkl")
 
-# Variables globales chargées UNE SEULE FOIS en mémoire au démarrage de l'API
+BASE_DIR = os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))
+)
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+MODELE_PATH = os.path.join(
+    DATA_DIR,
+    "modele_svm_fr.pkl"
+)
+
+VECTORIZER_PATH = os.path.join(
+    DATA_DIR,
+    "vectorizer_fr.pkl"
+)
+
+
+
 _model: Optional[object] = None
 _vectorizer: Optional[object] = None
 
+
+# Seuil choisi pendant nos tests
+SEUIL_CONFIANCE = 0.50
+
+
+
+def nettoyer_texte(texte: str) -> str:
+    """
+    Applique exactement le même nettoyage
+    que pendant l'entraînement du modèle.
+    """
+
+    texte = str(texte)
+
+    # Minuscules
+    texte = texte.lower()
+
+    # Normalisation des apostrophes
+    texte = texte.replace("’", "'")
+
+    # Garder lettres françaises, chiffres,
+    # apostrophes, espaces et tirets
+    texte = re.sub(
+        r"[^a-zàâäéèêëîïôöùûüÿçœæ0-9'\s-]",
+        " ",
+        texte
+    )
+
+    # Supprimer les espaces multiples
+    texte = re.sub(
+        r"\s+",
+        " ",
+        texte
+    )
+
+    return texte.strip()
+
+
+
 def load_ml_components() -> None:
     """
-    Charge le modèle et le vectorizer depuis le disque une seule fois.
-    Si les fichiers sont absents, déclenche la génération d'un modèle d'exemple.
+    Charge le SVM calibré et le vectorizer
+    une seule fois au démarrage de FastAPI.
     """
+
     global _model, _vectorizer
 
-    if not os.path.exists(MODELE_PATH) or not os.path.exists(VECTORIZER_PATH):
-        print("[ML Service] Fichiers modele.pkl ou vectorizer.pkl introuvables.")
-        print("[ML Service] Génération automatique d'un modèle factice de démonstration...")
-        import sys
-        root_dir = os.path.dirname(BASE_DIR)
-        if root_dir not in sys.path:
-            sys.path.insert(0, root_dir)
-        from create_dummy_model import generate_dummy_artifacts
-        generate_dummy_artifacts()
+    if not os.path.exists(MODELE_PATH):
+        raise FileNotFoundError(
+            f"Modèle introuvable : {MODELE_PATH}"
+        )
 
-    print(f"[ML Service] Chargement de {MODELE_PATH} et {VECTORIZER_PATH}...")
+    if not os.path.exists(VECTORIZER_PATH):
+        raise FileNotFoundError(
+            f"Vectorizer introuvable : {VECTORIZER_PATH}"
+        )
+
+    print("[ML Service] Chargement du modèle SVM français...")
+
     _model = joblib.load(MODELE_PATH)
     _vectorizer = joblib.load(VECTORIZER_PATH)
-    print("[ML Service] Modèle et Vectorizer chargés avec succès en mémoire.")
 
-def predire_reclamation(texte: str) -> Tuple[str, float]:
-    """
-    Transforme le texte de la réclamation avec le vectorizer,
-    effectue la prédiction avec le modèle et extrait le score de confiance.
+    print("[ML Service] Modèle chargé avec succès.")
+    print(
+        "[ML Service] Nombre de catégories :",
+        len(_model.classes_)
+    )
 
-    Returns:
-        tuple (catégorie: str, score_confiance: float entre 0.0 et 1.0)
-    """
+
+
+
+def predire_reclamation(
+    texte: str
+) -> Tuple[str, float]:
+
     global _model, _vectorizer
 
     if _model is None or _vectorizer is None:
-        raise RuntimeError("Le modèle ML n'a pas été initialisé au démarrage de l'application.")
+        raise RuntimeError(
+            "Le modèle ML n'est pas chargé."
+        )
 
-    # 1. Prétraitement / Transformation TF-IDF
-    texte_vectorise = _vectorizer.transform([texte])
+    if not texte or not texte.strip():
+        raise ValueError(
+            "Le texte de la réclamation est vide."
+        )
 
-    # 2. Prédiction de la catégorie
-    prediction = _model.predict(texte_vectorise)[0]
+    # 1. Nettoyage
+    texte_clean = nettoyer_texte(texte)
 
-    # 3. Calcul du score de confiance
-    score_confiance = 1.0
-    if hasattr(_model, "predict_proba"):
-        probas = _model.predict_proba(texte_vectorise)[0]
-        score_confiance = float(np.max(probas))
-    elif hasattr(_model, "decision_function"):
-        decision = _model.decision_function(texte_vectorise)
-        # Normalisation MinMax/Softmax approximative pour SVM sans probabilité
-        exp_d = np.exp(decision - np.max(decision))
-        softmax_probs = exp_d / np.sum(exp_d)
-        score_confiance = float(np.max(softmax_probs))
+    # 2. TF-IDF
+    texte_vectorise = _vectorizer.transform(
+        [texte_clean]
+    )
 
-    # S'assurer que la catégorie renvoyée est une chaîne simple
-    categorie_str = str(prediction)
+    # 3. Catégorie
+    prediction = _model.predict(
+        texte_vectorise
+    )[0]
 
-    return categorie_str, score_confiance
+    # 4. Probabilités du SVM calibré
+    probabilites = _model.predict_proba(
+        texte_vectorise
+    )[0]
+
+    # 5. Meilleure probabilité
+    score_confiance = float(
+        np.max(probabilites)
+    )
+
+    return str(prediction), score_confiance
