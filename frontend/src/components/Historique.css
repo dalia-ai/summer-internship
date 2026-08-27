@@ -1,0 +1,405 @@
+/* =========================================================
+   PAGE HISTORIQUE
+========================================================= */
+
+.historique-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #172033;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.historique-header {
+  margin-bottom: 28px;
+}
+
+.historique-header h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.historique-header p {
+  margin-top: 8px;
+  margin-bottom: 0;
+  color: #667085;
+  font-size: 15px;
+}
+
+/* =========================================================
+   FILTRES
+========================================================= */
+
+.historique-filters {
+  display: grid;
+  grid-template-columns: minmax(250px, 2fr) minmax(190px, 1fr) minmax(190px, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+
+  padding: 20px;
+  margin-bottom: 20px;
+
+  background: #ffffff;
+  border: 1px solid #e4e7ec;
+  border-radius: 14px;
+
+  box-shadow: 0 3px 10px rgba(16, 24, 40, 0.05);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.filter-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.filter-group input,
+.filter-group select {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+
+  background: #ffffff;
+  color: #344054;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 9px;
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.filter-group input::placeholder {
+  color: #98a2b3;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.reset-filter-button {
+  height: 44px;
+  padding: 0 18px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #344054;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.reset-filter-button:hover {
+  background: #f9fafb;
+  border-color: #98a2b3;
+}
+
+/* =========================================================
+   INFOS AVANT TABLEAU
+========================================================= */
+
+.history-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 12px;
+
+  color: #475467;
+  font-size: 14px;
+}
+
+.items-per-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.items-per-page select {
+  height: 36px;
+  padding: 0 10px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #344054;
+
+  outline: none;
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+
+  background: #ffffff;
+  border: 1px solid #e4e7ec;
+  border-radius: 14px;
+
+  box-shadow: 0 3px 10px rgba(16, 24, 40, 0.05);
+}
+
+.historique-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.historique-table thead {
+  background: #f8fafc;
+}
+
+.historique-table th {
+  padding: 16px 22px;
+
+  text-align: left;
+
+  color: #475467;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  border-bottom: 1px solid #e4e7ec;
+}
+
+.historique-table td {
+  padding: 17px 22px;
+
+  font-size: 14px;
+  color: #344054;
+
+  vertical-align: middle;
+
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.historique-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.historique-table tbody tr {
+  transition: background 0.15s;
+}
+
+.historique-table tbody tr:hover {
+  background: #fafbfc;
+}
+
+/* ==========================
+   LARGEUR DES 4 COLONNES
+========================== */
+
+/* Réclamation */
+.historique-table th:nth-child(1),
+.historique-table td:nth-child(1) {
+  width: 45%;
+}
+
+/* Catégorie */
+.historique-table th:nth-child(2),
+.historique-table td:nth-child(2) {
+  width: 25%;
+}
+
+/* Confiance */
+.historique-table th:nth-child(3),
+.historique-table td:nth-child(3) {
+  width: 15%;
+}
+
+/* Date */
+.historique-table th:nth-child(4),
+.historique-table td:nth-child(4) {
+  width: 15%;
+}
+
+/* =========================================================
+   TEXTE RÉCLAMATION
+========================================================= */
+
+.reclamation-text {
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   CATÉGORIE
+========================================================= */
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 7px 12px;
+
+  border-radius: 999px;
+
+  white-space: nowrap;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   TABLEAU VIDE
+========================================================= */
+
+.empty-history {
+  padding: 50px !important;
+
+  text-align: center !important;
+
+  color: #98a2b3 !important;
+}
+
+/* =========================================================
+   PAGINATION
+========================================================= */
+
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-top: 20px;
+
+  gap: 20px;
+}
+
+.pagination-info {
+  color: #667085;
+  font-size: 14px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pagination button {
+  min-width: 38px;
+  height: 38px;
+
+  padding: 0 12px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #344054;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: #f2f4f7;
+}
+
+.pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagination .page-button.active {
+  background: #2563eb;
+  color: #ffffff;
+
+  border-color: #2563eb;
+
+  font-weight: 600;
+}
+
+.pagination-dots {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 0 5px;
+
+  color: #98a2b3;
+}
+
+.date-cell {
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1000px) {
+  .historique-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .historique-container {
+    padding: 18px;
+  }
+
+  .historique-header h1 {
+    font-size: 24px;
+  }
+
+  .historique-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .history-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .pagination-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .historique-table {
+    min-width: 900px;
+  }
+}
