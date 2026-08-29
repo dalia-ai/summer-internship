@@ -50,65 +50,67 @@ def read_root():
 
 @app.post(
     "/classer",
-    response_model=ReclamationResponse,
-    status_code=status.HTTP_201_CREATED,
-    tags=["Classification"],
-    summary="Classer une réclamation bancaire"
+    response_model=ReclamationResponse
 )
-def classer_reclamation(payload: ReclamationRequest):
-    """
-    Classer le texte d'une réclamation bancaire :
-    - Prédit la catégorie et le score de confiance via le modèle ML préchargé
-    - Enregistre la réclamation et le résultat dans la base SQLite
-    - Renvoie la catégorie et le score
-    """
+def classer_reclamation(
+    payload: ReclamationRequest
+):
+
     try:
-        # 1. Prédiction ML
-        categorie, score_confiance = predire_reclamation(payload.texte)
+        categorie, score_confiance, statut = predire_reclamation(
+            payload.texte,
+            payload.langue
+        )
 
-        # 2. Sauvegarde dans la base de données
-        resultat_db = ajouter_reclamation(
+        resultat = ajouter_reclamation(
             texte=payload.texte,
+            langue=payload.langue,
             categorie=categorie,
-            score_confiance=score_confiance
+            score_confiance=score_confiance,
+            statut=statut
         )
 
-        return resultat_db
+        return resultat
 
-    except ValueError as ve:
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(ve)
+            status_code=400,
+            detail=str(e)
         )
+
     except Exception as e:
-        print(f"[Erreur /classer] {str(e)}")
+        print(
+            "[Erreur /classer]",
+            str(e)
+        )
+
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur interne lors de la classification de la réclamation: {str(e)}"
+            status_code=500,
+            detail=str(e)
         )
 
 @app.get(
     "/historique",
-    response_model=HistoriqueResponse,
-    tags=["Historique"],
-    summary="Consulter l'historique des réclamations"
+    response_model=HistoriqueResponse
 )
-def lire_historique(
-    limit: int = Query(20, ge=1, le=100, description="Nombre d'éléments à retourner"),
-    offset: int = Query(0, ge=0, description="Décalage pour la pagination")
+def historique(
+    limit: int = 20,
+    offset: int = 0
 ):
-    """
-    Récupère la liste des réclamations classées, triées par date décroissante.
-    """
     try:
-        items, total = obtenir_historique(limit=limit, offset=offset)
-        return {
-            "total": total,
-            "reclamations": items
-        }
+        return obtenir_historique(
+            limit=limit,
+            offset=offset
+        )
+
     except Exception as e:
-        print(f"[Erreur /historique] {str(e)}")
+
+        print(
+            "[Erreur /historique]",
+            str(e)
+        )
+
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la récupération de l'historique: {str(e)}"
+            status_code=500,
+            detail=str(e)
         )

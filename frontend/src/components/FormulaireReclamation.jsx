@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { classerReclamation } from '../services/api';
 
+
 const FormulaireReclamation = ({ onClassificationSuccess }) => {
   const [texte, setTexte] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const [langue, setLangue] = useState("fr");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +20,10 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
     setError(null);
 
     try {
-      const resultat = await classerReclamation(texte);
+      const resultat = await classerReclamation(
+  texte,
+  langue
+);
       onClassificationSuccess(resultat);
     } catch (err) {
       setError(err.message);
@@ -46,17 +52,50 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
+          <div className="flex items-center gap-3 mb-4">
+  <button
+    type="button"
+    onClick={() => setLangue("fr")}
+    className={`px-4 py-2 rounded-lg font-medium border ${
+      langue === "fr"
+        ? "bg-blue-600 text-white border-blue-600"
+        : "bg-white text-slate-700 border-slate-300"
+    }`}
+  >
+    Français
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setLangue("ar")}
+    className={`px-4 py-2 rounded-lg font-medium border ${
+      langue === "ar"
+        ? "bg-blue-600 text-white border-blue-600"
+        : "bg-white text-slate-700 border-slate-300"
+    }`}
+  >
+    العربية
+  </button>
+</div>
           <textarea
-            rows="5"
-            value={texte}
-            onChange={(e) => {
-              setTexte(e.target.value);
-              if (error) setError(null);
-            }}
-            placeholder="Saisissez votre réclamation "
-            className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800 text-sm placeholder-slate-400 outline-none transition-all resize-none shadow-inner bg-slate-50/50"
-            disabled={loading}
-          />
+  rows="5"
+  value={texte}
+  dir={langue === "ar" ? "rtl" : "ltr"}
+  lang={langue}
+  onChange={(e) => {
+    setTexte(e.target.value);
+    if (error) {
+      setError(null);
+    }
+  }}
+  placeholder={
+    langue === "ar"
+      ? "اكتب شكواك المصرفية هنا..."
+      : "Saisissez votre réclamation..."
+  }
+  className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800 text-sm placeholder-slate-400 outline-none transition-all resize-none shadow-inner bg-slate-50/50"
+  disabled={loading}
+/>
         </div>
 
         {/* Message d'erreur */}

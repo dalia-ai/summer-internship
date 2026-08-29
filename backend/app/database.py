@@ -18,82 +18,180 @@ def get_connection() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row  # Pour accéder aux colonnes par leur nom
     return conn
 
-def init_db() -> None:
-    """
-    Initialise la table 'reclamations' dans la base SQLite si elle n'existe pas.
-    """
+def init_db():
+
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
+
+        # Création pour une nouvelle base
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS reclamations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 texte TEXT NOT NULL,
+                langue TEXT NOT NULL DEFAULT 'fr',
                 categorie TEXT NOT NULL,
                 score_confiance REAL NOT NULL,
+                statut TEXT NOT NULL DEFAULT 'confiant',
                 date TEXT NOT NULL
             )
-        """)
-        conn.commit()
-    print(f"[Database] Base de données SQLite initialisée sur {DB_PATH}")
+            """
+        )
 
-def ajouter_reclamation(texte: str, categorie: str, score_confiance: float) -> Dict[str, Any]:
-    """
-    Insère une réclamation classée dans l'historique et retourne l'enregistrement complet.
-    """
-    date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # ====================================================
+        # MIGRATION DE L'ANCIENNE BASE
+        # ====================================================
+
+        cursor.execute(
+            "PRAGMA table_info(reclamations)"
+        )
+
+        colonnes = {
+            row["name"]
+            for row in cursor.fetchall()
+        }
+
+        # Ajouter langue si l'ancienne base ne l'a pas
+        if "langue" not in colonnes:
+
+            cursor.execute(
+                """
+                ALTER TABLE reclamations
+                ADD COLUMN langue TEXT
+                NOT NULL DEFAULT 'fr'
+                """
+            )
+
+            print(
+                "[Database] Colonne 'langue' ajoutée"
+            )
+
+        # Ajouter statut si l'ancienne base ne l'a pas
+        if "statut" not in colonnes:
+
+            cursor.execute(
+                """
+                ALTER TABLE reclamations
+                ADD COLUMN statut TEXT
+                NOT NULL DEFAULT 'confiant'
+                """
+            )
+
+            print(
+                "[Database] Colonne 'statut' ajoutée"
+            )
+
+        conn.commit()
+
+    print("[Database] Base SQLite initialisée")
+
+def ajouter_reclamation(
+    texte: str,
+    langue: str,
+    categorie: str,
+    score_confiance: float,
+    statut: str
+):
+    date_str = datetime.now().strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
+
     with get_connection() as conn:
         cursor = conn.cursor()
+
         cursor.execute(
             """
-            INSERT INTO reclamations (texte, categorie, score_confiance, date)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO reclamations
+            (
+                texte,
+                langue,
+                categorie,
+                score_confiance,
+                statut,
+                date
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (texte, categorie, float(score_confiance), date_str)
+            (
+                texte,
+                langue,
+                categorie,
+                float(score_confiance),
+                statut,
+                date_str
+            )
         )
+
         conn.commit()
-        inserted_id = cursor.lastrowid
+
+        reclamation_id = cursor.lastrowid
 
     return {
-        "id": inserted_id,
+        "id": reclamation_id,
         "texte": texte,
+        "langue": langue,
         "categorie": categorie,
-        "score_confiance": round(score_confiance, 4),
+        "score_confiance": round(
+            float(score_confiance),
+            4
+        ),
+        "statut": statut,
         "date": date_str
     }
 
-def obtenir_historique(limit: int = 20, offset: int = 0) -> Tuple[List[Dict[str, Any]], int]:
-    """
-    Récupère la liste des réclamations classées, triées par date décroissante,
-    ainsi que le nombre total d'enregistrements.
-    """
+def obtenir_historique(
+    limit: int = 20,
+    offset: int = 0
+):
     with get_connection() as conn:
         cursor = conn.cursor()
-        
-        # Compter le total
-        cursor.execute("SELECT COUNT(*) FROM reclamations")
+
+        # Nombre total de réclamations
+        cursor.execute(
+            "SELECT COUNT(*) FROM reclamations"
+        )
+
         total = cursor.fetchone()[0]
 
-        # Sélectionner les réclamations paginées
+        # Récupération des réclamations
         cursor.execute(
             """
-            SELECT id, texte, categorie, score_confiance, date
+            SELECT
+                id,
+                texte,
+                langue,
+                categorie,
+                score_confiance,
+                statut,
+                date
             FROM reclamations
             ORDER BY id DESC
             LIMIT ? OFFSET ?
             """,
-            (limit, offset)
+            (
+                limit,
+                offset
+            )
         )
+
         rows = cursor.fetchall()
-        
-        items = [
-            {
+
+        reclamations = []
+
+        for row in rows:
+            reclamations.append({
                 "id": row["id"],
                 "texte": row["texte"],
+                "langue": row["langue"],
                 "categorie": row["categorie"],
-                "score_confiance": row["score_confiance"],
+                "score_confiance": float(
+                    row["score_confiance"]
+                ),
+                "statut": row["statut"],
                 "date": row["date"]
-            }
-            for row in rows
-        ]
+            })
 
-    return items, total
+    return {
+        "total": total,
+        "reclamations": reclamations
+    }

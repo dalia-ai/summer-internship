@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// URL de base de l'API FastAPI (développement local)
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
 const api = axios.create({
@@ -8,52 +7,108 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // Timeout de 10 secondes
+  timeout: 10000,
 });
 
-/**
- * Envoie un texte de réclamation à classer au backend FastAPI.
- * @param {string} texte - Le texte saisi par l'utilisateur
- * @returns {Promise<{id: number, texte: string, categorie: string, score_confiance: number, date: string}>}
- */
-export const classerReclamation = async (texte) => {
+
+export const classerReclamation = async (texte, langue) => {
   try {
-    const response = await api.post('/classer', { texte });
+
+    console.log("Texte envoyé :", texte);
+    console.log("Langue envoyée :", langue);
+
+    const response = await api.post(
+      '/classer',
+      {
+        texte: texte,
+        langue: langue
+      }
+    );
+
     return response.data;
+
   } catch (error) {
+
+    console.error(
+      "Réponse FastAPI :",
+      error.response?.data
+    );
+
     if (error.response) {
-      // L'API a répondu avec un code d'erreur (4xx, 5xx)
-      throw new Error(error.response.data.detail || 'Erreur lors de la classification de la réclamation.');
-    } else if (error.request) {
-      // La requête a été émise mais pas de réponse (ex. API éteinte)
-      throw new Error("Impossible de contacter le serveur backend API (FastAPI). Vérifiez qu'il est bien démarré sur http://127.0.0.1:8000.");
-    } else {
-      throw new Error(error.message || 'Une erreur inattendue est survenue.');
+
+      const detail = error.response.data?.detail;
+
+      if (typeof detail === 'string') {
+        throw new Error(detail);
+      }
+
+      if (Array.isArray(detail)) {
+        throw new Error(
+          detail
+            .map((item) => item.msg)
+            .join(' | ')
+        );
+      }
+
+      throw new Error(
+        'Erreur lors de la classification.'
+      );
     }
+
+    if (error.request) {
+      throw new Error(
+        'Impossible de contacter FastAPI.'
+      );
+    }
+
+    throw new Error(
+      error.message ||
+      'Erreur inattendue.'
+    );
   }
 };
 
-/**
- * Récupère l'historique des dernières réclamations classées.
- * @param {number} limit - Nombre d'éléments (default: 20)
- * @param {number} offset - Décalage (default: 0)
- * @returns {Promise<{total: number, reclamations: Array}>}
- */
-export const fetchHistorique = async (limit = 20, offset = 0) => {
+
+export const fetchHistorique = async (
+  limit = 20,
+  offset = 0
+) => {
+
   try {
-    const response = await api.get('/historique', {
-      params: { limit, offset }
-    });
+
+    const response = await api.get(
+      '/historique',
+      {
+        params: {
+          limit,
+          offset
+        }
+      }
+    );
+
     return response.data;
+
   } catch (error) {
+
     if (error.response) {
-      throw new Error(error.response.data.detail || "Erreur lors de la récupération de l'historique.");
-    } else if (error.request) {
-      throw new Error("Impossible de contacter le serveur backend API (FastAPI).");
-    } else {
-      throw new Error(error.message || "Erreur lors du chargement de l'historique.");
+      throw new Error(
+        error.response.data.detail ||
+        "Erreur lors de la récupération de l'historique."
+      );
     }
+
+    if (error.request) {
+      throw new Error(
+        'Impossible de contacter le backend.'
+      );
+    }
+
+    throw new Error(
+      error.message ||
+      "Erreur lors du chargement de l'historique."
+    );
   }
 };
+
 
 export default api;
