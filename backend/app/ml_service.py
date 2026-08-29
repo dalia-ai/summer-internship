@@ -138,7 +138,7 @@ def nettoyer_texte_ar(texte: str) -> str:
 
 
 # ============================================================
-# CHARGEMENT
+# CHARGEMENT DES MODÈLES
 # ============================================================
 
 def load_ml_components() -> None:
@@ -158,12 +158,14 @@ def load_ml_components() -> None:
     for fichier in fichiers:
 
         if not os.path.exists(fichier):
-
             raise FileNotFoundError(
                 f"Fichier ML introuvable : {fichier}"
             )
 
+    # --------------------------------------------------------
     # Français
+    # --------------------------------------------------------
+
     print("[ML] Chargement modèle français...")
 
     _model_fr = joblib.load(
@@ -181,7 +183,10 @@ def load_ml_components() -> None:
     )
 
 
+    # --------------------------------------------------------
     # Arabe
+    # --------------------------------------------------------
+
     print("[ML] Chargement modèle arabe...")
 
     _model_ar = joblib.load(
@@ -212,14 +217,16 @@ def predire_reclamation(
 
     langue = langue.lower().strip()
 
-    if langue not in ["fr", "ar"]:
+    # ========================================================
+    # VALIDATIONS
+    # ========================================================
 
+    if langue not in ["fr", "ar"]:
         raise ValueError(
             "La langue doit être 'fr' ou 'ar'."
         )
 
     if not texte or not texte.strip():
-
         raise ValueError(
             "La réclamation ne peut pas être vide."
         )
@@ -232,23 +239,35 @@ def predire_reclamation(
     if langue == "fr":
 
         if _model_fr is None or _vectorizer_fr is None:
-
             raise RuntimeError(
                 "Le modèle français n'est pas chargé."
             )
 
+        # 1. Nettoyage
         texte_clean = nettoyer_texte_fr(
             texte
         )
 
+        # 2. Vectorisation
         X = _vectorizer_fr.transform(
             [texte_clean]
         )
 
+        # 3. Aucun mot reconnu par TF-IDF
+        if X.nnz == 0:
+            return (
+                "Non reconnue",
+                0.0,
+                "invalide"
+            )
+
+        # 4. Prédiction
         prediction = _model_fr.predict(X)[0]
 
+        # 5. Probabilités
         probabilites = _model_fr.predict_proba(X)[0]
 
+        # 6. Confiance
         confiance = float(
             np.max(probabilites)
         )
@@ -263,23 +282,35 @@ def predire_reclamation(
     else:
 
         if _model_ar is None or _vectorizer_ar is None:
-
             raise RuntimeError(
                 "Le modèle arabe n'est pas chargé."
             )
 
+        # 1. Nettoyage
         texte_clean = nettoyer_texte_ar(
             texte
         )
 
+        # 2. Vectorisation
         X = _vectorizer_ar.transform(
             [texte_clean]
         )
 
+        # 3. Aucun mot reconnu par TF-IDF
+        if X.nnz == 0:
+            return (
+                "غير معروفة",
+                0.0,
+                "invalide"
+            )
+
+        # 4. Prédiction
         prediction = _model_ar.predict(X)[0]
 
+        # 5. Probabilités
         probabilites = _model_ar.predict_proba(X)[0]
 
+        # 6. Confiance
         confiance = float(
             np.max(probabilites)
         )
@@ -288,7 +319,7 @@ def predire_reclamation(
 
 
     # ========================================================
-    # STATUT
+    # STATUT FINAL
     # ========================================================
 
     statut = (
