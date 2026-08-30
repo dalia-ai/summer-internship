@@ -44,8 +44,8 @@ export default function Statistiques() {
       setError("");
 
       const response = await fetch(
-        "http://127.0.0.1:8000/historique"
-      );
+  "http://127.0.0.1:8000/historique?limit=1000&offset=0"
+)
 
       if (!response.ok) {
         throw new Error(
