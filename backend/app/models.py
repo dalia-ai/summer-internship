@@ -10,7 +10,7 @@ class ReclamationRequest(BaseModel):
         min_length=1
     )
 
-    langue: Literal["fr", "ar"]
+    langue: Literal["fr", "ar", "en"]
 
 
 class ReclamationResponse(BaseModel):

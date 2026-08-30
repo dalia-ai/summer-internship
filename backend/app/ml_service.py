@@ -40,6 +40,18 @@ VECTORIZER_AR_PATH = os.path.join(
 )
 
 
+# Anglais
+MODEL_EN_PATH = os.path.join(
+    DATA_DIR,
+    "modele_svm_en.pkl"
+)
+
+VECTORIZER_EN_PATH = os.path.join(
+    DATA_DIR,
+    "vectorizer_en.pkl"
+)
+
+
 # ============================================================
 # OBJETS ML
 # ============================================================
@@ -50,9 +62,17 @@ _vectorizer_fr: Optional[object] = None
 _model_ar: Optional[object] = None
 _vectorizer_ar: Optional[object] = None
 
+_model_en: Optional[object] = None
+_vectorizer_en: Optional[object] = None
+
+
+# ============================================================
+# SEUILS DE CONFIANCE
+# ============================================================
 
 SEUIL_CONFIANCE_FR = 0.50
 SEUIL_CONFIANCE_AR = 0.50
+SEUIL_CONFIANCE_EN = 0.50
 
 
 # ============================================================
@@ -138,6 +158,33 @@ def nettoyer_texte_ar(texte: str) -> str:
 
 
 # ============================================================
+# NETTOYAGE ANGLAIS
+# ============================================================
+
+def nettoyer_texte_en(texte: str) -> str:
+
+    texte = str(texte)
+
+    texte = texte.lower()
+
+    texte = texte.replace("’", "'")
+
+    texte = re.sub(
+        r"[^a-z0-9'\s-]",
+        " ",
+        texte
+    )
+
+    texte = re.sub(
+        r"\s+",
+        " ",
+        texte
+    )
+
+    return texte.strip()
+
+
+# ============================================================
 # CHARGEMENT DES MODÈLES
 # ============================================================
 
@@ -145,22 +192,35 @@ def load_ml_components() -> None:
 
     global _model_fr
     global _vectorizer_fr
+
     global _model_ar
     global _vectorizer_ar
+
+    global _model_en
+    global _vectorizer_en
+
+
+    # --------------------------------------------------------
+    # Vérification des fichiers
+    # --------------------------------------------------------
 
     fichiers = [
         MODEL_FR_PATH,
         VECTORIZER_FR_PATH,
         MODEL_AR_PATH,
-        VECTORIZER_AR_PATH
+        VECTORIZER_AR_PATH,
+        MODEL_EN_PATH,
+        VECTORIZER_EN_PATH
     ]
 
     for fichier in fichiers:
 
         if not os.path.exists(fichier):
+
             raise FileNotFoundError(
                 f"Fichier ML introuvable : {fichier}"
             )
+
 
     # --------------------------------------------------------
     # Français
@@ -203,7 +263,31 @@ def load_ml_components() -> None:
         "catégories"
     )
 
-    print("[ML] Modèles FR + AR chargés")
+
+    # --------------------------------------------------------
+    # Anglais
+    # --------------------------------------------------------
+
+    print("[ML] Chargement modèle anglais...")
+
+    _model_en = joblib.load(
+        MODEL_EN_PATH
+    )
+
+    _vectorizer_en = joblib.load(
+        VECTORIZER_EN_PATH
+    )
+
+    print(
+        "[ML] Anglais :",
+        len(_model_en.classes_),
+        "catégories"
+    )
+
+
+    print(
+        "[ML] Modèles FR + AR + EN chargés"
+    )
 
 
 # ============================================================
@@ -217,16 +301,19 @@ def predire_reclamation(
 
     langue = langue.lower().strip()
 
+
     # ========================================================
     # VALIDATIONS
     # ========================================================
 
-    if langue not in ["fr", "ar"]:
+    if langue not in ["fr", "ar", "en"]:
+
         raise ValueError(
-            "La langue doit être 'fr' ou 'ar'."
+            "La langue doit être 'fr', 'ar' ou 'en'."
         )
 
     if not texte or not texte.strip():
+
         raise ValueError(
             "La réclamation ne peut pas être vide."
         )
@@ -239,35 +326,36 @@ def predire_reclamation(
     if langue == "fr":
 
         if _model_fr is None or _vectorizer_fr is None:
+
             raise RuntimeError(
                 "Le modèle français n'est pas chargé."
             )
 
-        # 1. Nettoyage
         texte_clean = nettoyer_texte_fr(
             texte
         )
 
-        # 2. Vectorisation
         X = _vectorizer_fr.transform(
             [texte_clean]
         )
 
-        # 3. Aucun mot reconnu par TF-IDF
+        # Aucun mot reconnu
         if X.nnz == 0:
+
             return (
                 "Non reconnue",
                 0.0,
                 "invalide"
             )
 
-        # 4. Prédiction
-        prediction = _model_fr.predict(X)[0]
+        prediction = _model_fr.predict(
+            X
+        )[0]
 
-        # 5. Probabilités
-        probabilites = _model_fr.predict_proba(X)[0]
+        probabilites = _model_fr.predict_proba(
+            X
+        )[0]
 
-        # 6. Confiance
         confiance = float(
             np.max(probabilites)
         )
@@ -279,43 +367,88 @@ def predire_reclamation(
     # ARABE
     # ========================================================
 
-    else:
+    elif langue == "ar":
 
         if _model_ar is None or _vectorizer_ar is None:
+
             raise RuntimeError(
                 "Le modèle arabe n'est pas chargé."
             )
 
-        # 1. Nettoyage
         texte_clean = nettoyer_texte_ar(
             texte
         )
 
-        # 2. Vectorisation
         X = _vectorizer_ar.transform(
             [texte_clean]
         )
 
-        # 3. Aucun mot reconnu par TF-IDF
+        # Aucun mot reconnu
         if X.nnz == 0:
+
             return (
                 "غير معروفة",
                 0.0,
                 "invalide"
             )
 
-        # 4. Prédiction
-        prediction = _model_ar.predict(X)[0]
+        prediction = _model_ar.predict(
+            X
+        )[0]
 
-        # 5. Probabilités
-        probabilites = _model_ar.predict_proba(X)[0]
+        probabilites = _model_ar.predict_proba(
+            X
+        )[0]
 
-        # 6. Confiance
         confiance = float(
             np.max(probabilites)
         )
 
         seuil = SEUIL_CONFIANCE_AR
+
+
+    # ========================================================
+    # ANGLAIS
+    # ========================================================
+
+    else:
+
+        if _model_en is None or _vectorizer_en is None:
+
+            raise RuntimeError(
+                "Le modèle anglais n'est pas chargé."
+            )
+
+        texte_clean = nettoyer_texte_en(
+            texte
+        )
+
+        X = _vectorizer_en.transform(
+            [texte_clean]
+        )
+
+        # Aucun mot reconnu
+        if X.nnz == 0:
+
+            return (
+                "Not recognized",
+                0.0,
+                "invalide"
+            )
+
+        prediction = _model_en.predict(
+            X
+        )[0]
+
+        probabilites = _model_en.predict_proba(
+            X
+        )[0]
+
+        confiance = float(
+            np.max(probabilites)
+        )
+
+        seuil = SEUIL_CONFIANCE_EN
 
 
     # ========================================================
