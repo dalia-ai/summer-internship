@@ -3,6 +3,7 @@ import "./Historique.css";
 
 export default function Historique() {
   const [reclamations, setReclamations] = useState([]);
+  const [total, setTotal] = useState(0);
 
   // Filtres
   const [search, setSearch] = useState("");
@@ -21,7 +22,7 @@ export default function Historique() {
 const chargerHistorique = async () => {
   try {
     const response = await fetch(
-      "http://127.0.0.1:8000/historique"
+      "http://127.0.0.1:8000/historique?limit=1000&offset=0"
     );
 
     if (!response.ok) {
@@ -37,13 +38,21 @@ const chargerHistorique = async () => {
         ? data.reclamations
         : []
     );
+
+    // Nombre TOTAL dans SQLite
+    setTotal(
+      Number(data.total ?? 0)
+    );
+
   } catch (error) {
+
     console.error(
       "Erreur chargement historique :",
       error
     );
 
     setReclamations([]);
+    setTotal(0);
   }
 };
 
@@ -277,9 +286,11 @@ if (dateFiltre) {
       {/* INFORMATIONS */}
       <div className="history-info">
         <span>
-          {reclamationsFiltrees.length} réclamation
-          {reclamationsFiltrees.length > 1 ? "s" : ""}
-        </span>
+  {search || categorie || confianceMin || dateFiltre
+    ? `${reclamationsFiltrees.length} sur ${total} réclamations`
+    : `${total} réclamation${total > 1 ? "s" : ""}`
+  }
+</span>
 
         <div className="items-per-page">
           <label>Afficher</label>
