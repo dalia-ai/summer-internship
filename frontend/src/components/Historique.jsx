@@ -4,14 +4,10 @@ import "./Historique.css";
 export default function Historique() {
   const [reclamations, setReclamations] = useState([]);
   const [total, setTotal] = useState(0);
-
-  // Filtres
   const [search, setSearch] = useState("");
   const [categorie, setCategorie] = useState("");
   const [confianceMin, setConfianceMin] = useState("");
   const [dateFiltre, setDateFiltre] = useState("");
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -39,7 +35,7 @@ const chargerHistorique = async () => {
         : []
     );
 
-    // Nombre TOTAL dans SQLite
+   
     setTotal(
       Number(data.total ?? 0)
     );
@@ -61,8 +57,7 @@ const formatDate = (dateValue) => {
     return "-";
   }
 
-  // Backend : "2026-08-27 11:09:23"
-  // Conversion vers un format ISO compris par JavaScript
+ 
   const date = new Date(
     String(dateValue).replace(" ", "T")
   );
@@ -94,7 +89,7 @@ const categories = [
   "Services bancaires",
 ];
 
-  // Filtrage
+  
   const reclamationsFiltrees = useMemo(() => {
   if (!Array.isArray(reclamations)) {
     return [];
@@ -155,13 +150,13 @@ if (dateFiltre) {
   dateFiltre
 ]);
 
-  // Nombre total de pages
+  
   const totalPages = Math.max(
     1,
     Math.ceil(reclamationsFiltrees.length / itemsPerPage)
   );
 
-  // Données de la page actuelle
+ 
   const reclamationsPage = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -169,12 +164,12 @@ if (dateFiltre) {
     return reclamationsFiltrees.slice(startIndex, endIndex);
   }, [reclamationsFiltrees, currentPage, itemsPerPage]);
 
-  // Lorsqu'un filtre change, revenir page 1
+  
   useEffect(() => {
     setCurrentPage(1);
   }, [search, categorie, confianceMin, itemsPerPage, dateFiltre]);
 
-  // Sécurité si le nombre de pages diminue
+  
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
@@ -283,7 +278,7 @@ if (dateFiltre) {
         </div>
       </div>
 
-      {/* INFORMATIONS */}
+      
       <div className="history-info">
         <span>
   {search || categorie || confianceMin || dateFiltre

@@ -71,17 +71,9 @@ export default function Statistiques() {
     }
   };
 
-  // ==========================================
-  // TOTAL
-  // ==========================================
 
   const totalReclamations = reclamations.length;
-
-  // ==========================================
-  // CONFIANCE MOYENNE
-  // ==========================================
-
-  const confianceMoyenne = useMemo(() => {
+ const confianceMoyenne = useMemo(() => {
     if (reclamations.length === 0) {
       return 0;
     }
@@ -100,10 +92,6 @@ export default function Statistiques() {
     return (somme / reclamations.length) * 100;
   }, [reclamations]);
 
-  // ==========================================
-  // HAUTE / FAIBLE CONFIANCE
-  // ==========================================
-
   const hauteConfiance = useMemo(() => {
     return reclamations.filter(
       (reclamation) =>
@@ -118,10 +106,7 @@ export default function Statistiques() {
     ).length;
   }, [reclamations]);
 
-  // ==========================================
-  // NOMBRE PAR CATÉGORIE
-  // ==========================================
-
+ 
   const statistiquesCategories = useMemo(() => {
     return categories
       .map((categorie) => {
@@ -183,9 +168,6 @@ const evolutionParDate = useMemo(() => {
     );
 }, [reclamations]);
 
-  // ==========================================
-  // CATÉGORIE DOMINANTE
-  // ==========================================
 
   const categorieDominante =
     statistiquesCategories.length > 0 &&

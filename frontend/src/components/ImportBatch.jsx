@@ -3,9 +3,7 @@ import * as XLSX from "xlsx";
 import "./ImportBatch.css";
 
 export default function ImportBatch() {
-  // ==========================================
-  // STATES
-  // ==========================================
+
 
   const [fichier, setFichier] = useState(null);
 
@@ -32,9 +30,7 @@ export default function ImportBatch() {
     setErreurClassification,
   ] = useState("");
 
-  // ==========================================
-  // IMPORT DU FICHIER
-  // ==========================================
+ 
 
   const handleFileChange = async (event) => {
     const selectedFile =
@@ -120,9 +116,7 @@ export default function ImportBatch() {
 
       setColonnes(nomsColonnes);
 
-      // ======================================
-      // DÉTECTION AUTOMATIQUE DE LA COLONNE
-      // ======================================
+
 
       const colonneDetectee =
         nomsColonnes.find(
@@ -159,9 +153,7 @@ export default function ImportBatch() {
     }
   };
 
-  // ==========================================
-  // LIGNES VALIDES
-  // ==========================================
+  
 
   const lignesValides =
     donnees.filter((ligne) => {
@@ -176,9 +168,6 @@ export default function ImportBatch() {
       return texte !== "";
     });
 
-  // ==========================================
-  // CLASSIFICATION EN LOT
-  // ==========================================
 
   const classifierToutesLesReclamations =
     async () => {
@@ -214,9 +203,6 @@ export default function ImportBatch() {
               ]
             ).trim();
 
-          // ==================================
-          // APPEL API
-          // ==================================
 
           const response =
             await fetch(
@@ -255,9 +241,7 @@ export default function ImportBatch() {
           const data =
             await response.json();
 
-          // ==================================
-          // NORMALISATION DU RÉSULTAT
-          // ==================================
+          
 
           const categorie =
             data.categorie ??
@@ -316,16 +300,12 @@ export default function ImportBatch() {
       }
     };
 
-  // ==========================================
-  // RENDER
-  // ==========================================
+  
 
   return (
     <div className="import-batch-container">
 
-      {/* =====================================
-          HEADER
-      ===================================== */}
+     
 
       <div className="import-batch-header">
 
@@ -342,9 +322,7 @@ export default function ImportBatch() {
       </div>
 
 
-      {/* =====================================
-          ETAPE 1 - IMPORT
-      ===================================== */}
+     
 
       <div className="import-card">
 
@@ -440,9 +418,6 @@ export default function ImportBatch() {
       </div>
 
 
-      {/* =====================================
-          ETAPE 2 - COLONNE
-      ===================================== */}
 
       {donnees.length > 0 && (
         <div className="import-card">
@@ -519,9 +494,7 @@ export default function ImportBatch() {
       )}
 
 
-      {/* =====================================
-          ETAPE 3 - APERÇU
-      ===================================== */}
+      
 
       {lignesValides.length >
         0 && (
@@ -564,7 +537,7 @@ export default function ImportBatch() {
           </div>
 
 
-          {/* TABLE APERÇU */}
+          
 
           <div className="preview-table-wrapper">
 
@@ -629,8 +602,7 @@ export default function ImportBatch() {
           </div>
 
 
-          {/* INFO LIMITATION APERÇU */}
-
+         
           {lignesValides.length >
             10 && (
             <div className="preview-information">
@@ -693,7 +665,7 @@ export default function ImportBatch() {
           </div>
 
 
-          {/* PROGRESSION */}
+          
 
           {classificationEnCours && (
             <div className="batch-progress">
@@ -727,7 +699,7 @@ export default function ImportBatch() {
           )}
 
 
-          {/* ERREUR CLASSIFICATION */}
+          
 
           {erreurClassification && (
             <div className="import-error">
@@ -743,9 +715,6 @@ export default function ImportBatch() {
       )}
 
 
-      {/* =====================================
-          ETAPE 4 - RESULTATS
-      ===================================== */}
 
       {resultats.length > 0 && (
         <div className="import-card">

@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     yield
     print("[FastAPI Lifespan] Arrêt du serveur backend...")
 
-# Instanciation de FastAPI avec documentation Swagger automatique
+
 app = FastAPI(
     title="API Classification Réclamations Bancaires",
     description="API REST de classification automatique de réclamations bancaires par Machine Learning (TF-IDF + Scikit-Learn)",
@@ -28,10 +28,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Activation des CORS pour permettre au Frontend React (Vite) de consommer l'API
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En développement local
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

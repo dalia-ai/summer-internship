@@ -5,9 +5,7 @@ import numpy as np
 from typing import Optional, Tuple
 
 
-# ============================================================
-# CHEMINS
-# ============================================================
+
 
 BASE_DIR = os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))
@@ -52,9 +50,7 @@ VECTORIZER_EN_PATH = os.path.join(
 )
 
 
-# ============================================================
-# OBJETS ML
-# ============================================================
+
 
 _model_fr: Optional[object] = None
 _vectorizer_fr: Optional[object] = None
@@ -66,18 +62,14 @@ _model_en: Optional[object] = None
 _vectorizer_en: Optional[object] = None
 
 
-# ============================================================
-# SEUILS DE CONFIANCE
-# ============================================================
+
+
 
 SEUIL_CONFIANCE_FR = 0.50
 SEUIL_CONFIANCE_AR = 0.50
 SEUIL_CONFIANCE_EN = 0.50
 
 
-# ============================================================
-# NETTOYAGE FRANÇAIS
-# ============================================================
 
 def nettoyer_texte_fr(texte: str) -> str:
 
@@ -102,9 +94,7 @@ def nettoyer_texte_fr(texte: str) -> str:
     return texte.strip()
 
 
-# ============================================================
-# NETTOYAGE ARABE
-# ============================================================
+
 
 def nettoyer_texte_ar(texte: str) -> str:
 
@@ -157,9 +147,7 @@ def nettoyer_texte_ar(texte: str) -> str:
     return texte.strip()
 
 
-# ============================================================
-# NETTOYAGE ANGLAIS
-# ============================================================
+
 
 def nettoyer_texte_en(texte: str) -> str:
 
@@ -184,9 +172,7 @@ def nettoyer_texte_en(texte: str) -> str:
     return texte.strip()
 
 
-# ============================================================
-# CHARGEMENT DES MODÈLES
-# ============================================================
+
 
 def load_ml_components() -> None:
 
@@ -200,9 +186,7 @@ def load_ml_components() -> None:
     global _vectorizer_en
 
 
-    # --------------------------------------------------------
-    # Vérification des fichiers
-    # --------------------------------------------------------
+
 
     fichiers = [
         MODEL_FR_PATH,
@@ -222,9 +206,6 @@ def load_ml_components() -> None:
             )
 
 
-    # --------------------------------------------------------
-    # Français
-    # --------------------------------------------------------
 
     print("[ML] Chargement modèle français...")
 
@@ -243,9 +224,7 @@ def load_ml_components() -> None:
     )
 
 
-    # --------------------------------------------------------
-    # Arabe
-    # --------------------------------------------------------
+
 
     print("[ML] Chargement modèle arabe...")
 
@@ -264,9 +243,7 @@ def load_ml_components() -> None:
     )
 
 
-    # --------------------------------------------------------
-    # Anglais
-    # --------------------------------------------------------
+ 
 
     print("[ML] Chargement modèle anglais...")
 
@@ -290,9 +267,7 @@ def load_ml_components() -> None:
     )
 
 
-# ============================================================
-# PRÉDICTION
-# ============================================================
+
 
 def predire_reclamation(
     texte: str,
@@ -302,9 +277,7 @@ def predire_reclamation(
     langue = langue.lower().strip()
 
 
-    # ========================================================
-    # VALIDATIONS
-    # ========================================================
+
 
     if langue not in ["fr", "ar", "en"]:
 
@@ -319,9 +292,7 @@ def predire_reclamation(
         )
 
 
-    # ========================================================
-    # FRANÇAIS
-    # ========================================================
+
 
     if langue == "fr":
 
@@ -363,9 +334,7 @@ def predire_reclamation(
         seuil = SEUIL_CONFIANCE_FR
 
 
-    # ========================================================
-    # ARABE
-    # ========================================================
+
 
     elif langue == "ar":
 
@@ -407,9 +376,7 @@ def predire_reclamation(
         seuil = SEUIL_CONFIANCE_AR
 
 
-    # ========================================================
-    # ANGLAIS
-    # ========================================================
+ 
 
     else:
 
@@ -451,9 +418,7 @@ def predire_reclamation(
         seuil = SEUIL_CONFIANCE_EN
 
 
-    # ========================================================
-    # STATUT FINAL
-    # ========================================================
+   
 
     statut = (
         "confiant"

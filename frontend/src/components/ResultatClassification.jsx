@@ -2,9 +2,6 @@ import React from "react";
 
 const ResultatClassification = ({ resultat }) => {
 
-  // =========================================================
-  // CAS : AUCUN RÉSULTAT
-  // =========================================================
 
   if (!resultat) {
     return (
@@ -37,9 +34,6 @@ const ResultatClassification = ({ resultat }) => {
   }
 
 
-  // =========================================================
-  // DONNÉES DU BACKEND
-  // =========================================================
 
   const {
     id,
@@ -52,9 +46,7 @@ const ResultatClassification = ({ resultat }) => {
   } = resultat;
 
 
-  // =========================================================
-  // TRADUCTIONS INTERFACE
-  // =========================================================
+
 
   const traductions = {
 
@@ -108,18 +100,14 @@ const ResultatClassification = ({ resultat }) => {
   const t = traductions[langue] || traductions.fr;
 
 
-  // =========================================================
-  // SCORE EN POURCENTAGE
-  // =========================================================
+
 
   const scorePercent = Math.round(
     Number(score_confiance || 0) * 100
   );
 
 
-  // =========================================================
-  // COULEURS SELON LE SCORE / STATUT
-  // =========================================================
+
 
   let badgeColor =
     "bg-emerald-100 text-emerald-800 border-emerald-300";
@@ -173,10 +161,6 @@ const ResultatClassification = ({ resultat }) => {
   }
 
 
-  // =========================================================
-  // LABEL DU STATUT
-  // =========================================================
-
   const statutLabel =
     statut === "confiant"
       ? t.confiant
@@ -187,9 +171,6 @@ const ResultatClassification = ({ resultat }) => {
       : "";
 
 
-  // =========================================================
-  // ICÔNES PAR CATÉGORIE
-  // =========================================================
 
   const getCategoryIcon = (cat) => {
 
@@ -239,10 +220,6 @@ const ResultatClassification = ({ resultat }) => {
   };
 
 
-  // =========================================================
-  // AFFICHAGE
-  // =========================================================
-
   return (
 
     <div
@@ -259,9 +236,7 @@ const ResultatClassification = ({ resultat }) => {
       "
     >
 
-      {/* =====================================================
-          EN-TÊTE
-      ===================================================== */}
+   
 
       <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
 
@@ -296,10 +271,6 @@ const ResultatClassification = ({ resultat }) => {
       </div>
 
 
-      {/* =====================================================
-          CATÉGORIE
-      ===================================================== */}
-
       <div className="mb-6">
 
         <p className="text-xs text-slate-500 font-medium mb-1">
@@ -320,10 +291,6 @@ const ResultatClassification = ({ resultat }) => {
 
       </div>
 
-
-      {/* =====================================================
-          SCORE DE CONFIANCE
-      ===================================================== */}
 
       <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
 
@@ -402,10 +369,6 @@ const ResultatClassification = ({ resultat }) => {
 
       </div>
 
-
-      {/* =====================================================
-          TEXTE ORIGINAL
-      ===================================================== */}
 
       <div>
 

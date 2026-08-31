@@ -38,9 +38,7 @@ def init_db():
             """
         )
 
-        # ====================================================
-        # MIGRATION DE L'ANCIENNE BASE
-        # ====================================================
+     
 
         cursor.execute(
             "PRAGMA table_info(reclamations)"

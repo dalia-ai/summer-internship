@@ -11,9 +11,7 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
   const [langue, setLangue] = useState("fr");
 
 
-  // =========================================================
-  // TEXTES DE L'INTERFACE
-  // =========================================================
+
 
   const traductions = {
 
@@ -52,9 +50,7 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
   const t = traductions[langue];
 
 
-  // =========================================================
-  // ENVOI DU FORMULAIRE
-  // =========================================================
+
 
   const handleSubmit = async (e) => {
 
@@ -90,9 +86,6 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
   };
 
 
-  // =========================================================
-  // EFFACER
-  // =========================================================
 
   const handleClear = () => {
 
@@ -101,9 +94,7 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
   };
 
 
-  // =========================================================
-  // CHANGEMENT DE LANGUE
-  // =========================================================
+
 
   const handleLangueChange = (nouvelleLangue) => {
 
@@ -114,9 +105,7 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
   };
 
 
-  // =========================================================
-  // AFFICHAGE
-  // =========================================================
+
 
   return (
 
@@ -133,9 +122,7 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
       "
     >
 
-      {/* ====================================================
-          TITRE
-      ==================================================== */}
+     
 
       <div className="flex items-center justify-between mb-4">
 
@@ -186,9 +173,6 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
         <div className="mb-4">
 
 
-          {/* ==================================================
-              SÉLECTEUR DE LANGUE
-          ================================================== */}
 
           <div className="flex items-center gap-3 mb-4 flex-wrap">
 
@@ -263,9 +247,7 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
           </div>
 
 
-          {/* ==================================================
-              ZONE TEXTE
-          ================================================== */}
+      
 
           <textarea
 
@@ -318,9 +300,7 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
         </div>
 
 
-        {/* ====================================================
-            MESSAGE D'ERREUR
-        ==================================================== */}
+     
 
         {error && (
 
@@ -374,9 +354,6 @@ const FormulaireReclamation = ({ onClassificationSuccess }) => {
         )}
 
 
-        {/* ====================================================
-            BOUTONS
-        ==================================================== */}
 
         <div className="flex items-center justify-between gap-3">
 
