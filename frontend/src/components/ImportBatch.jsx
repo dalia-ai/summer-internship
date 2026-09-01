@@ -5,9 +5,6 @@ import "./ImportBatch.css";
 
 export default function ImportBatch() {
 
-  // =========================================================
-  // STATES
-  // =========================================================
 
   const [fichier, setFichier] = useState(null);
 
@@ -38,10 +35,6 @@ export default function ImportBatch() {
   ] = useState("");
 
 
-  // =========================================================
-  // CHANGEMENT DE LANGUE
-  // =========================================================
-
   const changerLangue = (nouvelleLangue) => {
 
     setLangue(nouvelleLangue);
@@ -53,10 +46,6 @@ export default function ImportBatch() {
     setErreurClassification("");
   };
 
-
-  // =========================================================
-  // IMPORT DU FICHIER
-  // =========================================================
 
   const handleFileChange = async (event) => {
 
@@ -87,9 +76,6 @@ export default function ImportBatch() {
     setClassificationEnCours(false);
 
 
-    // =======================================================
-    // VÉRIFICATION DU FORMAT
-    // =======================================================
 
     const extension =
       selectedFile.name
@@ -114,9 +100,6 @@ export default function ImportBatch() {
 
     try {
 
-      // =====================================================
-      // LECTURE DU FICHIER
-      // =====================================================
 
       const buffer =
         await selectedFile.arrayBuffer();
@@ -141,11 +124,6 @@ export default function ImportBatch() {
           nomPremiereFeuille
         ];
 
-
-      // =====================================================
-      // CONVERSION VERS JSON
-      // =====================================================
-
       const lignes =
         XLSX.utils.sheet_to_json(
           feuille,
@@ -165,10 +143,6 @@ export default function ImportBatch() {
       }
 
 
-      // =====================================================
-      // COLONNES
-      // =====================================================
-
       const nomsColonnes =
         Object.keys(lignes[0]);
 
@@ -178,11 +152,6 @@ export default function ImportBatch() {
       setDonnees(lignes);
 
       setColonnes(nomsColonnes);
-
-
-      // =====================================================
-      // DÉTECTION AUTOMATIQUE DE LA COLONNE TEXTE
-      // =====================================================
 
       const colonneDetectee =
         nomsColonnes.find(
@@ -225,9 +194,6 @@ export default function ImportBatch() {
   };
 
 
-  // =========================================================
-  // LIGNES VALIDES
-  // =========================================================
 
   const lignesValides =
     donnees.filter((ligne) => {
@@ -246,10 +212,6 @@ export default function ImportBatch() {
       return texte !== "";
     });
 
-
-  // =========================================================
-  // CLASSIFICATION EN LOT
-  // =========================================================
 
   const classifierToutesLesReclamations =
     async () => {
@@ -270,9 +232,6 @@ export default function ImportBatch() {
 
       try {
 
-        // ===================================================
-        // PRÉPARATION DES TEXTES
-        // ===================================================
 
         const textes =
           lignesValides.map(
@@ -284,10 +243,6 @@ export default function ImportBatch() {
               ).trim()
           );
 
-
-        // ===================================================
-        // UNE SEULE REQUÊTE VERS FASTAPI
-        // ===================================================
 
         const response =
           await fetch(
@@ -307,11 +262,6 @@ export default function ImportBatch() {
             }
           );
 
-
-        // ===================================================
-        // ERREUR HTTP
-        // ===================================================
-
         if (!response.ok) {
 
           const message =
@@ -323,11 +273,6 @@ export default function ImportBatch() {
           );
         }
 
-
-        // ===================================================
-        // RÉPONSE JSON
-        // ===================================================
-
         const data =
           await response.json();
 
@@ -336,11 +281,6 @@ export default function ImportBatch() {
           "Résultats batch reçus :",
           data
         );
-
-
-        // ===================================================
-        // NORMALISATION DES RÉSULTATS
-        // ===================================================
 
         const resultatsNormalises =
           Array.isArray(
@@ -405,9 +345,7 @@ export default function ImportBatch() {
     };
 
 
-  // =========================================================
-  // LABEL LANGUE
-  // =========================================================
+
 
   const getLangueLabel = (code) => {
 
@@ -426,10 +364,6 @@ export default function ImportBatch() {
     return code;
   };
 
-
-  // =========================================================
-  // LABEL STATUT
-  // =========================================================
 
   const getStatutLabel = (
     statut,
@@ -507,18 +441,14 @@ export default function ImportBatch() {
   };
 
 
-  // =========================================================
-  // AFFICHAGE
-  // =========================================================
+
 
   return (
 
     <div className="import-batch-container">
 
 
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+
 
       <div className="import-batch-header">
 
@@ -534,10 +464,6 @@ export default function ImportBatch() {
 
       </div>
 
-
-      {/* =====================================================
-          ÉTAPE 1 : IMPORT
-      ===================================================== */}
 
       <div className="import-card">
 
@@ -643,10 +569,6 @@ export default function ImportBatch() {
       </div>
 
 
-      {/* =====================================================
-          ÉTAPE 2 : COLONNE
-      ===================================================== */}
-
       {donnees.length > 0 && (
 
         <div className="import-card">
@@ -720,10 +642,6 @@ export default function ImportBatch() {
 
       )}
 
-
-      {/* =====================================================
-          ÉTAPE 3 : LANGUE
-      ===================================================== */}
 
       {donnees.length > 0 && (
 
@@ -925,10 +843,6 @@ export default function ImportBatch() {
       )}
 
 
-      {/* =====================================================
-          ÉTAPE 4 : APERÇU
-      ===================================================== */}
-
       {lignesValides.length > 0 && (
 
         <div className="import-card">
@@ -1051,10 +965,6 @@ export default function ImportBatch() {
           )}
 
 
-          {/* =================================================
-              ACTION
-          ================================================= */}
-
           <div className="batch-actions">
 
             <span>
@@ -1104,10 +1014,6 @@ export default function ImportBatch() {
           </div>
 
 
-          {/* =================================================
-              TRAITEMENT EN COURS
-          ================================================= */}
-
           {classificationEnCours && (
 
             <div className="batch-progress">
@@ -1126,9 +1032,7 @@ export default function ImportBatch() {
           )}
 
 
-          {/* =================================================
-              ERREUR CLASSIFICATION
-          ================================================= */}
+      
 
           {erreurClassification && (
 
@@ -1145,9 +1049,7 @@ export default function ImportBatch() {
       )}
 
 
-      {/* =====================================================
-          ÉTAPE 5 : RÉSULTATS
-      ===================================================== */}
+
 
       {resultats.length > 0 && (
 
