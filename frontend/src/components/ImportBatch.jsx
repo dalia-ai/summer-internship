@@ -2,8 +2,12 @@ import { useState } from "react";
 import * as XLSX from "xlsx";
 import "./ImportBatch.css";
 
+
 export default function ImportBatch() {
 
+  // =========================================================
+  // STATES
+  // =========================================================
 
   const [fichier, setFichier] = useState(null);
 
@@ -14,6 +18,9 @@ export default function ImportBatch() {
   const [colonneTexte, setColonneTexte] =
     useState("");
 
+  // Langue sélectionnée pour tout le fichier importé
+  const [langue, setLangue] = useState("fr");
+
   const [erreur, setErreur] = useState("");
 
   const [resultats, setResultats] = useState([]);
@@ -23,16 +30,38 @@ export default function ImportBatch() {
     setClassificationEnCours,
   ] = useState(false);
 
-  const [progression, setProgression] = useState(0);
+  const [progression, setProgression] =
+    useState(0);
 
   const [
     erreurClassification,
     setErreurClassification,
   ] = useState("");
 
- 
+
+  // =========================================================
+  // CHANGEMENT DE LANGUE
+  // =========================================================
+
+  const changerLangue = (nouvelleLangue) => {
+
+    setLangue(nouvelleLangue);
+
+    // Supprimer les résultats calculés avec l'ancienne langue
+    setResultats([]);
+
+    setProgression(0);
+
+    setErreurClassification("");
+  };
+
+
+  // =========================================================
+  // IMPORT DU FICHIER
+  // =========================================================
 
   const handleFileChange = async (event) => {
+
     const selectedFile =
       event.target.files?.[0];
 
@@ -40,27 +69,39 @@ export default function ImportBatch() {
       return;
     }
 
+
     // Réinitialisation
     setErreur("");
+
     setFichier(null);
+
     setDonnees([]);
+
     setColonnes([]);
+
     setColonneTexte("");
 
     setResultats([]);
+
     setProgression(0);
+
     setErreurClassification("");
+
     setClassificationEnCours(false);
 
+
     // Vérifier l'extension
-    const extension = selectedFile.name
-      .split(".")
-      .pop()
-      ?.toLowerCase();
+    const extension =
+      selectedFile.name
+        .split(".")
+        .pop()
+        ?.toLowerCase();
+
 
     if (
       !["csv", "xls", "xlsx"].includes(extension)
     ) {
+
       setErreur(
         "Format non supporté. Utilisez un fichier CSV, XLS ou XLSX."
       );
@@ -68,26 +109,33 @@ export default function ImportBatch() {
       return;
     }
 
+
     try {
+
       // Lecture du fichier
       const buffer =
         await selectedFile.arrayBuffer();
 
-      const workbook = XLSX.read(
-        buffer,
-        {
-          type: "array",
-        }
-      );
+
+      const workbook =
+        XLSX.read(
+          buffer,
+          {
+            type: "array",
+          }
+        );
+
 
       // Première feuille Excel
       const nomPremiereFeuille =
         workbook.SheetNames[0];
 
+
       const feuille =
         workbook.Sheets[
           nomPremiereFeuille
         ];
+
 
       // Conversion vers JSON
       const lignes =
@@ -98,7 +146,9 @@ export default function ImportBatch() {
           }
         );
 
+
       if (lignes.length === 0) {
+
         setErreur(
           "Le fichier ne contient aucune donnée."
         );
@@ -106,9 +156,11 @@ export default function ImportBatch() {
         return;
       }
 
+
       // Colonnes disponibles
       const nomsColonnes =
         Object.keys(lignes[0]);
+
 
       setFichier(selectedFile);
 
@@ -117,13 +169,15 @@ export default function ImportBatch() {
       setColonnes(nomsColonnes);
 
 
-
+      // Détection automatique de la colonne texte
       const colonneDetectee =
         nomsColonnes.find(
           (nom) => {
-            const normalise = nom
-              .trim()
-              .toLowerCase();
+
+            const normalise =
+              nom
+                .trim()
+                .toLowerCase();
 
             return [
               "reclamation",
@@ -131,17 +185,18 @@ export default function ImportBatch() {
               "texte",
               "text",
               "description",
-            ].includes(
-              normalise
-            );
+            ].includes(normalise);
           }
         );
 
+
       setColonneTexte(
         colonneDetectee ||
-          nomsColonnes[0]
+        nomsColonnes[0]
       );
+
     } catch (error) {
+
       console.error(
         "Erreur lecture fichier :",
         error
@@ -153,33 +208,42 @@ export default function ImportBatch() {
     }
   };
 
-  
+
+  // =========================================================
+  // LIGNES VALIDES
+  // =========================================================
 
   const lignesValides =
     donnees.filter((ligne) => {
+
       if (!colonneTexte) {
         return false;
       }
 
-      const texte = String(
-        ligne[colonneTexte] ?? ""
-      ).trim();
+      const texte =
+        String(
+          ligne[colonneTexte] ?? ""
+        ).trim();
 
       return texte !== "";
     });
 
 
+  // =========================================================
+  // CLASSIFICATION EN LOT
+  // =========================================================
+
   const classifierToutesLesReclamations =
     async () => {
+
       if (
         lignesValides.length === 0
       ) {
         return;
       }
 
-      setClassificationEnCours(
-        true
-      );
+
+      setClassificationEnCours(true);
 
       setProgression(0);
 
@@ -187,15 +251,18 @@ export default function ImportBatch() {
 
       setErreurClassification("");
 
+
       const nouveauxResultats = [];
 
+
       try {
+
         for (
           let i = 0;
-          i <
-          lignesValides.length;
+          i < lignesValides.length;
           i++
         ) {
+
           const texte =
             String(
               lignesValides[i][
@@ -203,6 +270,10 @@ export default function ImportBatch() {
               ]
             ).trim();
 
+
+          // =================================================
+          // APPEL FASTAPI
+          // =================================================
 
           const response =
             await fetch(
@@ -215,17 +286,16 @@ export default function ImportBatch() {
                     "application/json",
                 },
 
-                body:
-                  JSON.stringify(
-                    {
-                      texte:
-                        texte,
-                    }
-                  ),
+                body: JSON.stringify({
+                  texte,
+                  langue,
+                }),
               }
             );
 
+
           if (!response.ok) {
+
             const message =
               await response.text();
 
@@ -238,52 +308,68 @@ export default function ImportBatch() {
             );
           }
 
+
           const data =
             await response.json();
 
-          
 
+          // Catégorie
           const categorie =
             data.categorie ??
             data.prediction ??
             data.category ??
             "-";
 
+
+          // Score
           const score =
             Number(
               data.score_confiance ??
-                data.confiance ??
-                data.confidence ??
-                data.score ??
-                0
+              data.confiance ??
+              data.confidence ??
+              data.score ??
+              0
             );
 
-          nouveauxResultats.push(
-            {
-              texte,
-              categorie,
-              score,
-            }
-          );
 
-          // Mettre à jour le tableau
+          // Statut
+          const statut =
+            data.statut ??
+            "-";
+
+
+          // Ajouter le résultat
+          nouveauxResultats.push({
+            texte,
+            langue,
+            categorie,
+            score,
+            statut,
+          });
+
+
+          // Mise à jour du tableau
           setResultats([
             ...nouveauxResultats,
           ]);
+
 
           // Progression
           const progressionActuelle =
             Math.round(
               ((i + 1) /
                 lignesValides.length) *
-                100
+              100
             );
+
 
           setProgression(
             progressionActuelle
           );
         }
-      } catch (error) {
+
+    } catch (error) {
+
         console.error(
           "Erreur classification :",
           error
@@ -291,21 +377,52 @@ export default function ImportBatch() {
 
         setErreurClassification(
           error.message ||
-            "Une erreur est survenue pendant la classification."
+          "Une erreur est survenue pendant la classification."
         );
+
       } finally {
+
         setClassificationEnCours(
           false
         );
       }
     };
 
-  
+
+  // =========================================================
+  // LABEL LANGUE
+  // =========================================================
+
+  const getLangueLabel = (code) => {
+
+    if (code === "fr") {
+      return "Français";
+    }
+
+    if (code === "ar") {
+      return "العربية";
+    }
+
+    if (code === "en") {
+      return "English";
+    }
+
+    return code;
+  };
+
+
+  // =========================================================
+  // AFFICHAGE
+  // =========================================================
 
   return (
+
     <div className="import-batch-container">
 
-     
+
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <div className="import-batch-header">
 
@@ -322,7 +439,9 @@ export default function ImportBatch() {
       </div>
 
 
-     
+      {/* =====================================================
+          ÉTAPE 1 : IMPORT
+      ===================================================== */}
 
       <div className="import-card">
 
@@ -333,6 +452,7 @@ export default function ImportBatch() {
           </div>
 
           <div>
+
             <h2>
               Importer un fichier
             </h2>
@@ -341,6 +461,7 @@ export default function ImportBatch() {
               Formats acceptés :
               CSV, XLS et XLSX
             </p>
+
           </div>
 
         </div>
@@ -363,9 +484,7 @@ export default function ImportBatch() {
           <input
             type="file"
             accept=".csv,.xls,.xlsx"
-            onChange={
-              handleFileChange
-            }
+            onChange={handleFileChange}
             hidden
           />
 
@@ -375,15 +494,18 @@ export default function ImportBatch() {
         {/* ERREUR IMPORT */}
 
         {erreur && (
+
           <div className="import-error">
             {erreur}
           </div>
+
         )}
 
 
         {/* FICHIER SÉLECTIONNÉ */}
 
         {fichier && (
+
           <div className="selected-file">
 
             <div>
@@ -393,14 +515,17 @@ export default function ImportBatch() {
               </strong>
 
               <span>
+
                 {(
                   fichier.size /
                   1024
                 ).toFixed(1)}{" "}
                 Ko
+
               </span>
 
             </div>
+
 
             <div className="file-lines">
 
@@ -413,13 +538,18 @@ export default function ImportBatch() {
             </div>
 
           </div>
+
         )}
 
       </div>
 
 
+      {/* =====================================================
+          ÉTAPE 2 : COLONNE
+      ===================================================== */}
 
       {donnees.length > 0 && (
+
         <div className="import-card">
 
           <div className="import-card-header">
@@ -451,16 +581,14 @@ export default function ImportBatch() {
             </label>
 
             <select
-              value={
-                colonneTexte
-              }
+              value={colonneTexte}
+
               onChange={(event) => {
+
                 setColonneTexte(
                   event.target.value
                 );
 
-                // Réinitialiser
-                // les anciennes classifications
                 setResultats([]);
 
                 setProgression(0);
@@ -473,16 +601,14 @@ export default function ImportBatch() {
 
               {colonnes.map(
                 (colonne) => (
+
                   <option
-                    key={
-                      colonne
-                    }
-                    value={
-                      colonne
-                    }
+                    key={colonne}
+                    value={colonne}
                   >
                     {colonne}
                   </option>
+
                 )
               )}
 
@@ -491,13 +617,16 @@ export default function ImportBatch() {
           </div>
 
         </div>
+
       )}
 
 
-      
+      {/* =====================================================
+          ÉTAPE 3 : LANGUE
+      ===================================================== */}
 
-      {lignesValides.length >
-        0 && (
+      {donnees.length > 0 && (
+
         <div className="import-card">
 
           <div className="import-card-header">
@@ -509,27 +638,13 @@ export default function ImportBatch() {
             <div>
 
               <h2>
-                Aperçu des réclamations
+                Sélectionner la langue
               </h2>
 
               <p>
-                {
-                  lignesValides.length
-                }{" "}
-                réclamation
-                {
-                  lignesValides.length >
-                  1
-                    ? "s"
-                    : ""
-                }{" "}
-                détectée
-                {
-                  lignesValides.length >
-                  1
-                    ? "s"
-                    : ""
-                }
+                Choisissez la langue des
+                réclamations contenues dans
+                le fichier.
               </p>
 
             </div>
@@ -537,13 +652,176 @@ export default function ImportBatch() {
           </div>
 
 
-          
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              flexWrap: "wrap",
+            }}
+          >
+
+            {/* FR */}
+
+            <button
+              type="button"
+              onClick={() =>
+                changerLangue("fr")
+              }
+              style={{
+                padding: "10px 18px",
+                borderRadius: "10px",
+                border:
+                  langue === "fr"
+                    ? "1px solid #2563eb"
+                    : "1px solid #cbd5e1",
+                background:
+                  langue === "fr"
+                    ? "#2563eb"
+                    : "#ffffff",
+                color:
+                  langue === "fr"
+                    ? "#ffffff"
+                    : "#334155",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              Français
+            </button>
+
+
+            {/* AR */}
+
+            <button
+              type="button"
+              onClick={() =>
+                changerLangue("ar")
+              }
+              style={{
+                padding: "10px 18px",
+                borderRadius: "10px",
+                border:
+                  langue === "ar"
+                    ? "1px solid #2563eb"
+                    : "1px solid #cbd5e1",
+                background:
+                  langue === "ar"
+                    ? "#2563eb"
+                    : "#ffffff",
+                color:
+                  langue === "ar"
+                    ? "#ffffff"
+                    : "#334155",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              العربية
+            </button>
+
+
+            {/* EN */}
+
+            <button
+              type="button"
+              onClick={() =>
+                changerLangue("en")
+              }
+              style={{
+                padding: "10px 18px",
+                borderRadius: "10px",
+                border:
+                  langue === "en"
+                    ? "1px solid #2563eb"
+                    : "1px solid #cbd5e1",
+                background:
+                  langue === "en"
+                    ? "#2563eb"
+                    : "#ffffff",
+                color:
+                  langue === "en"
+                    ? "#ffffff"
+                    : "#334155",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              English
+            </button>
+
+          </div>
+
+
+          <div
+            style={{
+              marginTop: "14px",
+              fontSize: "14px",
+              color: "#64748b",
+            }}
+          >
+
+            Langue sélectionnée :{" "}
+
+            <strong>
+              {getLangueLabel(langue)}
+            </strong>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+      {/* =====================================================
+          ÉTAPE 4 : APERÇU
+      ===================================================== */}
+
+      {lignesValides.length > 0 && (
+
+        <div className="import-card">
+
+          <div className="import-card-header">
+
+            <div className="step-number">
+              4
+            </div>
+
+            <div>
+
+              <h2>
+                Aperçu des réclamations
+              </h2>
+
+              <p>
+
+                {lignesValides.length}{" "}
+
+                réclamation
+
+                {lignesValides.length > 1
+                  ? "s"
+                  : ""}{" "}
+
+                détectée
+
+                {lignesValides.length > 1
+                  ? "s"
+                  : ""}
+
+              </p>
+
+            </div>
+
+          </div>
+
 
           <div className="preview-table-wrapper">
 
             <table className="preview-table">
 
               <thead>
+
                 <tr>
 
                   <th>
@@ -555,6 +833,7 @@ export default function ImportBatch() {
                   </th>
 
                 </tr>
+
               </thead>
 
 
@@ -570,20 +849,20 @@ export default function ImportBatch() {
                       ligne,
                       index
                     ) => (
-                      <tr
-                        key={
-                          index
-                        }
-                      >
+
+                      <tr key={index}>
 
                         <td>
-                          {
-                            index +
-                            1
-                          }
+                          {index + 1}
                         </td>
 
-                        <td>
+                        <td
+                          dir={
+                            langue === "ar"
+                              ? "rtl"
+                              : "ltr"
+                          }
+                        >
                           {String(
                             ligne[
                               colonneTexte
@@ -592,6 +871,7 @@ export default function ImportBatch() {
                         </td>
 
                       </tr>
+
                     )
                   )}
 
@@ -602,18 +882,16 @@ export default function ImportBatch() {
           </div>
 
 
-         
-          {lignesValides.length >
-            10 && (
+          {lignesValides.length > 10 && (
+
             <div className="preview-information">
 
               Aperçu limité aux 10 premières
               réclamations sur{" "}
-              {
-                lignesValides.length
-              }.
+              {lignesValides.length}.
 
             </div>
+
           )}
 
 
@@ -623,23 +901,20 @@ export default function ImportBatch() {
 
             <span>
 
-              {
-                lignesValides.length
-              }{" "}
+              {lignesValides.length}{" "}
+
               réclamation
-              {
-                lignesValides.length >
-                1
-                  ? "s"
-                  : ""
-              }{" "}
+
+              {lignesValides.length > 1
+                ? "s"
+                : ""}{" "}
+
               prête
-              {
-                lignesValides.length >
-                1
-                  ? "s"
-                  : ""
-              }{" "}
+
+              {lignesValides.length > 1
+                ? "s"
+                : ""}{" "}
+
               pour la classification.
 
             </span>
@@ -658,16 +933,18 @@ export default function ImportBatch() {
 
               {classificationEnCours
                 ? `Classification... ${progression} %`
-                : `Classifier les ${lignesValides.length} réclamations`}
+                : `Classifier les ${lignesValides.length} réclamations`
+              }
 
             </button>
 
           </div>
 
 
-          
+          {/* PROGRESSION */}
 
           {classificationEnCours && (
+
             <div className="batch-progress">
 
               <div className="batch-progress-info">
@@ -696,33 +973,39 @@ export default function ImportBatch() {
               </div>
 
             </div>
+
           )}
 
 
-          
+          {/* ERREUR CLASSIFICATION */}
 
           {erreurClassification && (
+
             <div className="import-error">
 
-              {
-                erreurClassification
-              }
+              {erreurClassification}
 
             </div>
+
           )}
 
         </div>
+
       )}
 
 
+      {/* =====================================================
+          ÉTAPE 5 : RÉSULTATS
+      ===================================================== */}
 
       {resultats.length > 0 && (
+
         <div className="import-card">
 
           <div className="import-card-header">
 
             <div className="step-number">
-              4
+              5
             </div>
 
             <div>
@@ -733,23 +1016,19 @@ export default function ImportBatch() {
 
               <p>
 
-                {
-                  resultats.length
-                }{" "}
+                {resultats.length}{" "}
+
                 réclamation
-                {
-                  resultats.length >
-                  1
-                    ? "s"
-                    : ""
-                }{" "}
+
+                {resultats.length > 1
+                  ? "s"
+                  : ""}{" "}
+
                 classifiée
-                {
-                  resultats.length >
-                  1
-                    ? "s"
-                    : ""
-                }
+
+                {resultats.length > 1
+                  ? "s"
+                  : ""}
 
               </p>
 
@@ -763,6 +1042,7 @@ export default function ImportBatch() {
             <table className="preview-table">
 
               <thead>
+
                 <tr>
 
                   <th>
@@ -774,6 +1054,10 @@ export default function ImportBatch() {
                   </th>
 
                   <th>
+                    Langue
+                  </th>
+
+                  <th>
                     Catégorie
                   </th>
 
@@ -781,7 +1065,12 @@ export default function ImportBatch() {
                     Confiance
                   </th>
 
+                  <th>
+                    Statut
+                  </th>
+
                 </tr>
+
               </thead>
 
 
@@ -794,31 +1083,35 @@ export default function ImportBatch() {
                   ) => {
 
                     const score =
-                      resultat.score <=
-                      1
-                        ? resultat.score *
-                          100
+                      resultat.score <= 1
+                        ? resultat.score * 100
                         : resultat.score;
 
+
                     return (
-                      <tr
-                        key={
-                          index
-                        }
-                      >
+
+                      <tr key={index}>
 
                         <td>
-                          {
-                            index +
-                            1
+                          {index + 1}
+                        </td>
+
+
+                        <td
+                          dir={
+                            resultat.langue === "ar"
+                              ? "rtl"
+                              : "ltr"
                           }
+                        >
+                          {resultat.texte}
                         </td>
 
 
                         <td>
-                          {
-                            resultat.texte
-                          }
+                          {getLangueLabel(
+                            resultat.langue
+                          )}
                         </td>
 
 
@@ -839,23 +1132,37 @@ export default function ImportBatch() {
 
                           <span
                             className={
-                              score >=
-                              50
+                              score >= 50
                                 ? "score-badge score-success"
                                 : "score-badge score-warning"
                             }
                           >
 
-                            {score.toFixed(
-                              1
-                            )}{" "}
-                            %
+                            {score.toFixed(1)} %
+
+                          </span>
+
+                        </td>
+
+
+                        <td>
+
+                          <span
+                            className={
+                              resultat.statut === "confiant"
+                                ? "score-badge score-success"
+                                : "score-badge score-warning"
+                            }
+                          >
+
+                            {resultat.statut}
 
                           </span>
 
                         </td>
 
                       </tr>
+
                     );
                   }
                 )}
@@ -867,6 +1174,7 @@ export default function ImportBatch() {
           </div>
 
         </div>
+
       )}
 
     </div>
