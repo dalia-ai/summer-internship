@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import {
   BrowserRouter,
   Routes,
@@ -6,162 +7,459 @@ import {
   NavLink,
 } from "react-router-dom";
 
-import FormulaireReclamation from "./components/FormulaireReclamation";
-import ResultatClassification from "./components/ResultatClassification";
-import Historique from "./components/Historique";
-import Statistiques from "./components/Statistiques";
-import ImportBatch from "./components/ImportBatch";
+import FormulaireReclamation
+  from "./components/FormulaireReclamation";
+
+import ResultatClassification
+  from "./components/ResultatClassification";
+
+import Historique
+  from "./components/Historique";
+
+import Statistiques
+  from "./components/Statistiques";
+
+import ImportBatch
+  from "./components/ImportBatch";
+
 
 function App() {
-  const [dernierResultat, setDernierResultat] = useState(null);
+
+  const [
+    dernierResultat,
+    setDernierResultat,
+  ] = useState(null);
 
   const [
     refreshHistoriqueCounter,
     setRefreshHistoriqueCounter,
   ] = useState(0);
 
-  const handleClassificationSuccess = (resultat) => {
-    setDernierResultat(resultat);
+  const handleClassificationSuccess =
+    (resultat) => {
 
-    // Rafraîchir automatiquement l'historique
-    setRefreshHistoriqueCounter((prev) => prev + 1);
-  };
-
+      setDernierResultat(
+        resultat
+      );
+   setRefreshHistoriqueCounter(
+        (prev) => prev + 1
+      );
+    };
   return (
+
     <BrowserRouter>
-      <div className="min-h-screen bg-slate-50 text-slate-800 pb-16">
 
-        {/* HEADER */}
-        <header className="bg-slate-900 text-white border-b border-slate-800 shadow-md">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 flex items-center justify-between">
+      <div
+        className="
+          min-h-screen
+          bg-slate-50
+          text-slate-800
+        "
+      >
+        <aside
+          className="
+            fixed
+            top-0
+            left-0
+            h-screen
+            w-64
+            bg-slate-900
+            text-white
+            border-r
+            border-slate-800
+            shadow-xl
+            z-50
+            flex
+            flex-col
+          "
+        ><div
+            className="
+              px-6
+              py-6
+              border-b
+              border-slate-800
+            "
+          >
 
-            {/* LOGO */}
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-blue-500/30">
+            <div
+              className="
+                flex
+                items-center
+                gap-3
+              "
+            >
+
+              <div
+                className="
+                  w-11
+                  h-11
+                  rounded-xl
+                  bg-blue-600
+                  flex
+                  items-center
+                  justify-center
+                  font-black
+                  text-xl
+                  text-white
+                  shadow-lg
+                  shadow-blue-500/20
+                "
+              >
+
                 B
+
               </div>
 
+
               <div>
-                <h1 className="font-bold text-base tracking-tight text-white leading-none">
+
+                <h1
+                  className="
+                    font-bold
+                    text-lg
+                    text-white
+                    leading-none
+                  "
+                >
                   Smart Bank
                 </h1>
 
-                <p className="text-xs text-slate-400 font-medium mt-1">
-                  Classification automatique de réclamations bancaires
+
+                <p
+                  className="
+                    text-xs
+                    text-slate-400
+                    mt-1
+                  "
+                >
+                  Classification IA
                 </p>
+
               </div>
+
             </div>
 
-            {/* NAVIGATION */}
-            <nav className="flex items-center gap-2">
+          </div>
 
-              <NavLink
-                to="/"
-                end
-                className={({ isActive }) =>
-                  `px-4 py-2 rounded-lg text-sm font-semibold transition ${
+          <nav
+            className="
+              flex-1
+              px-4
+              py-6
+              space-y-2
+            "
+          >
+
+
+            {/* ACCUEIL */}
+
+            <NavLink
+              to="/"
+              end
+
+              className={({
+                isActive,
+              }) =>
+
+                `
+                  flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  text-sm
+                  font-semibold
+                  transition-all
+
+                  ${
                     isActive
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                  }`
-                }
+
+                      ? `
+                          bg-blue-600
+                          text-white
+                          shadow-md
+                          shadow-blue-500/20
+                        `
+
+                      : `
+                          text-slate-300
+                          hover:bg-slate-800
+                          hover:text-white
+                        `
+                  }
+                `
+              }
+            >
+
+              <span
+                className="
+                  text-lg
+                  w-6
+                  text-center
+                "
               >
+            
+              </span>
+
+              <span>
                 Accueil
-              </NavLink>
+              </span>
 
-              <NavLink
-                to="/statistiques"
-                className={({ isActive }) =>
-                  `px-4 py-2 rounded-lg text-sm font-semibold transition ${
+            </NavLink>
+
+
+            {/* IMPORT */}
+
+            <NavLink
+              to="/import"
+
+              className={({
+                isActive,
+              }) =>
+
+                `
+                  flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  text-sm
+                  font-semibold
+                  transition-all
+
+                  ${
                     isActive
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                  }`
-                }
+
+                      ? `
+                          bg-blue-600
+                          text-white
+                          shadow-md
+                          shadow-blue-500/20
+                        `
+
+                      : `
+                          text-slate-300
+                          hover:bg-slate-800
+                          hover:text-white
+                        `
+                  }
+                `
+              }
+            >
+
+              <span
+                className="
+                  text-lg
+                  w-6
+                  text-center
+                "
               >
-                Statistiques
-              </NavLink>
-
               
+              </span>
 
-              <NavLink
-  to="/import"
-  className={({ isActive }) =>
-    `px-4 py-2 rounded-lg text-sm font-semibold transition ${
-      isActive
-        ? "bg-blue-600 text-white"
-        : "text-slate-300 hover:bg-slate-800 hover:text-white"
-    }`
-  }
->
-  Import 
-</NavLink>
+              <span>
+                Import
+              </span>
 
-            </nav>
+            </NavLink>
+
+
+            {/* STATISTIQUES */}
+
+            <NavLink
+              to="/statistiques"
+
+              className={({
+                isActive,
+              }) =>
+
+                `
+                  flex
+                  items-center
+                  gap-3
+                  px-4
+                  py-3
+                  rounded-xl
+                  text-sm
+                  font-semibold
+                  transition-all
+
+                  ${
+                    isActive
+
+                      ? `
+                          bg-blue-600
+                          text-white
+                          shadow-md
+                          shadow-blue-500/20
+                        `
+
+                      : `
+                          text-slate-300
+                          hover:bg-slate-800
+                          hover:text-white
+                        `
+                  }
+                `
+              }
+            >
+
+              <span
+                className="
+                  text-lg
+                  w-6
+                  text-center
+                "
+              >
+                
+              </span>
+
+              <span>
+                Statistiques
+              </span>
+
+            </NavLink>
+
+          </nav>
+
+
+          <div
+            className="
+              px-6
+              py-5
+              border-t
+              border-slate-800
+            "
+          >
+
+            <p
+              className="
+                text-xs
+                text-slate-400
+              "
+            >
+              Proxym - 2026
+            </p>
+
+           
 
           </div>
-        </header>
 
-        {/* CONTENU */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        </aside>
 
-          <Routes>
+        <main
+          className="
+            ml-64
+            min-h-screen
+            px-8
+            py-8
+          "
+        >
 
-            {/* PAGE ACCUEIL */}
-            <Route
-              path="/"
-              element={
-                <>
-                  {/* FORMULAIRE + RESULTAT */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <div
+            className="
+              max-w-7xl
+              mx-auto
+            "
+          >
 
-                    <div>
-                      <FormulaireReclamation
-                        onClassificationSuccess={
-                          handleClassificationSuccess
+
+            <Routes>
+
+              <Route
+                path="/"
+
+                element={
+
+                  <>
+
+                    {/* FORMULAIRE + RÉSULTAT */}
+
+                    <div
+                      className="
+                        grid
+                        grid-cols-1
+                        lg:grid-cols-2
+                        gap-8
+                        items-start
+                      "
+                    >
+
+
+                      <div>
+
+                        <FormulaireReclamation
+
+                          onClassificationSuccess={
+                            handleClassificationSuccess
+                          }
+
+                        />
+
+                      </div>
+
+
+                      <div>
+
+                        <ResultatClassification
+
+                          resultat={
+                            dernierResultat
+                          }
+
+                        />
+
+                      </div>
+
+
+                    </div>
+
+                    <div className="mt-10">
+
+                      <Historique
+
+                        refreshTrigger={
+                          refreshHistoriqueCounter
                         }
+
                       />
+
                     </div>
 
-                    <div>
-                      <ResultatClassification
-                        resultat={dernierResultat}
-                      />
-                    </div>
+                  </>
 
-                  </div>
+                }
+              />
 
-                  {/* HISTORIQUE SUR LA PAGE ACCUEIL */}
-                  <div className="mt-10">
-                    <Historique
-                      refreshTrigger={
-                        refreshHistoriqueCounter
-                      }
-                    />
-                  </div>
-                </>
-              }
-            />
+              <Route
+                path="/import"
+                element={
+                  <ImportBatch />
+                }
+              />
 
-            {/* PAGE STATISTIQUES */}
-            <Route
-              path="/statistiques"
-              element={<Statistiques />}
-            />
+              <Route
+                path="/statistiques"
+                element={
+                  <Statistiques />
+                }
+              />
 
-            {/* PAGE IMPORT */}
-            <Route
-              path="/import"
-              element={<ImportBatch />}
-            />
 
-          </Routes>
+            </Routes>
+
+          </div>
 
         </main>
 
+
       </div>
+
     </BrowserRouter>
   );
 }
+
 
 export default App;
