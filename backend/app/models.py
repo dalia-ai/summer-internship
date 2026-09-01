@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from typing import Literal
+from typing import Literal, List
 
 
 class ReclamationRequest(BaseModel):
@@ -28,3 +28,8 @@ class HistoriqueResponse(BaseModel):
     """
     total: int = Field(..., description="Nombre total d'éléments renvoyés")
     reclamations: List[ReclamationResponse] = Field(..., description="Liste des réclamations classées")
+
+
+class ReclamationBatchRequest(BaseModel):
+    langue: Literal["fr", "ar", "en"]
+    textes: List[str]

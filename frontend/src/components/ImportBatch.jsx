@@ -18,20 +18,19 @@ export default function ImportBatch() {
   const [colonneTexte, setColonneTexte] =
     useState("");
 
-  // Langue sélectionnée pour tout le fichier importé
-  const [langue, setLangue] = useState("fr");
+  const [langue, setLangue] =
+    useState("fr");
 
-  const [erreur, setErreur] = useState("");
+  const [erreur, setErreur] =
+    useState("");
 
-  const [resultats, setResultats] = useState([]);
+  const [resultats, setResultats] =
+    useState([]);
 
   const [
     classificationEnCours,
     setClassificationEnCours,
   ] = useState(false);
-
-  const [progression, setProgression] =
-    useState(0);
 
   const [
     erreurClassification,
@@ -47,10 +46,9 @@ export default function ImportBatch() {
 
     setLangue(nouvelleLangue);
 
-    // Supprimer les résultats calculés avec l'ancienne langue
+    // Les anciens résultats correspondaient
+    // potentiellement à une autre langue
     setResultats([]);
-
-    setProgression(0);
 
     setErreurClassification("");
   };
@@ -64,6 +62,7 @@ export default function ImportBatch() {
 
     const selectedFile =
       event.target.files?.[0];
+
 
     if (!selectedFile) {
       return;
@@ -83,14 +82,15 @@ export default function ImportBatch() {
 
     setResultats([]);
 
-    setProgression(0);
-
     setErreurClassification("");
 
     setClassificationEnCours(false);
 
 
-    // Vérifier l'extension
+    // =======================================================
+    // VÉRIFICATION DU FORMAT
+    // =======================================================
+
     const extension =
       selectedFile.name
         .split(".")
@@ -99,7 +99,9 @@ export default function ImportBatch() {
 
 
     if (
-      !["csv", "xls", "xlsx"].includes(extension)
+      !["csv", "xls", "xlsx"].includes(
+        extension
+      )
     ) {
 
       setErreur(
@@ -112,7 +114,10 @@ export default function ImportBatch() {
 
     try {
 
-      // Lecture du fichier
+      // =====================================================
+      // LECTURE DU FICHIER
+      // =====================================================
+
       const buffer =
         await selectedFile.arrayBuffer();
 
@@ -137,7 +142,10 @@ export default function ImportBatch() {
         ];
 
 
-      // Conversion vers JSON
+      // =====================================================
+      // CONVERSION VERS JSON
+      // =====================================================
+
       const lignes =
         XLSX.utils.sheet_to_json(
           feuille,
@@ -157,7 +165,10 @@ export default function ImportBatch() {
       }
 
 
-      // Colonnes disponibles
+      // =====================================================
+      // COLONNES
+      // =====================================================
+
       const nomsColonnes =
         Object.keys(lignes[0]);
 
@@ -169,7 +180,10 @@ export default function ImportBatch() {
       setColonnes(nomsColonnes);
 
 
-      // Détection automatique de la colonne texte
+      // =====================================================
+      // DÉTECTION AUTOMATIQUE DE LA COLONNE TEXTE
+      // =====================================================
+
       const colonneDetectee =
         nomsColonnes.find(
           (nom) => {
@@ -178,6 +192,7 @@ export default function ImportBatch() {
               nom
                 .trim()
                 .toLowerCase();
+
 
             return [
               "reclamation",
@@ -202,6 +217,7 @@ export default function ImportBatch() {
         error
       );
 
+
       setErreur(
         "Impossible de lire le fichier sélectionné."
       );
@@ -220,10 +236,12 @@ export default function ImportBatch() {
         return false;
       }
 
+
       const texte =
         String(
           ligne[colonneTexte] ?? ""
         ).trim();
+
 
       return texte !== "";
     });
@@ -245,135 +263,133 @@ export default function ImportBatch() {
 
       setClassificationEnCours(true);
 
-      setProgression(0);
-
       setResultats([]);
 
       setErreurClassification("");
 
 
-      const nouveauxResultats = [];
-
-
       try {
 
-        for (
-          let i = 0;
-          i < lignesValides.length;
-          i++
-        ) {
+        // ===================================================
+        // PRÉPARATION DES TEXTES
+        // ===================================================
 
-          const texte =
-            String(
-              lignesValides[i][
-                colonneTexte
-              ]
-            ).trim();
-
-
-          // =================================================
-          // APPEL FASTAPI
-          // =================================================
-
-          const response =
-            await fetch(
-              "http://127.0.0.1:8000/classer",
-              {
-                method: "POST",
-
-                headers: {
-                  "Content-Type":
-                    "application/json",
-                },
-
-                body: JSON.stringify({
-                  texte,
-                  langue,
-                }),
-              }
-            );
+        const textes =
+          lignesValides.map(
+            (ligne) =>
+              String(
+                ligne[
+                  colonneTexte
+                ] ?? ""
+              ).trim()
+          );
 
 
-          if (!response.ok) {
+        // ===================================================
+        // UNE SEULE REQUÊTE VERS FASTAPI
+        // ===================================================
 
-            const message =
-              await response.text();
+        const response =
+          await fetch(
+            "http://127.0.0.1:8000/classer-batch",
+            {
+              method: "POST",
 
-            throw new Error(
-              `Erreur ligne ${
-                i + 1
-              } : HTTP ${
-                response.status
-              } ${message}`
-            );
-          }
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
 
-
-          const data =
-            await response.json();
-
-
-          // Catégorie
-          const categorie =
-            data.categorie ??
-            data.prediction ??
-            data.category ??
-            "-";
+              body: JSON.stringify({
+                langue,
+                textes,
+              }),
+            }
+          );
 
 
-          // Score
-          const score =
-            Number(
-              data.score_confiance ??
-              data.confiance ??
-              data.confidence ??
-              data.score ??
-              0
-            );
+        // ===================================================
+        // ERREUR HTTP
+        // ===================================================
+
+        if (!response.ok) {
+
+          const message =
+            await response.text();
 
 
-          // Statut
-          const statut =
-            data.statut ??
-            "-";
-
-
-          // Ajouter le résultat
-          nouveauxResultats.push({
-            texte,
-            langue,
-            categorie,
-            score,
-            statut,
-          });
-
-
-          // Mise à jour du tableau
-          setResultats([
-            ...nouveauxResultats,
-          ]);
-
-
-          // Progression
-          const progressionActuelle =
-            Math.round(
-              ((i + 1) /
-                lignesValides.length) *
-              100
-            );
-
-
-          setProgression(
-            progressionActuelle
+          throw new Error(
+            `HTTP ${response.status} : ${message}`
           );
         }
+
+
+        // ===================================================
+        // RÉPONSE JSON
+        // ===================================================
+
+        const data =
+          await response.json();
+
+
+        console.log(
+          "Résultats batch reçus :",
+          data
+        );
+
+
+        // ===================================================
+        // NORMALISATION DES RÉSULTATS
+        // ===================================================
+
+        const resultatsNormalises =
+          Array.isArray(
+            data.resultats
+          )
+            ? data.resultats.map(
+                (item) => ({
+
+                  texte:
+                    item.texte ?? "",
+
+                  langue:
+                    item.langue ??
+                    langue,
+
+                  categorie:
+                    item.categorie ??
+                    item.prediction ??
+                    item.category ??
+                    "-",
+
+                  score:
+                    Number(
+                      item.score_confiance ??
+                      item.confiance ??
+                      item.confidence ??
+                      item.score ??
+                      0
+                    ),
+
+                  statut:
+                    item.statut ??
+                    "-",
+                })
+              )
+            : [];
+
+
+        setResultats(
+          resultatsNormalises
+        );
 
     } catch (error) {
 
         console.error(
-          "Erreur classification :",
+          "Erreur classification batch :",
           error
         );
+
 
         setErreurClassification(
           error.message ||
@@ -408,6 +424,86 @@ export default function ImportBatch() {
     }
 
     return code;
+  };
+
+
+  // =========================================================
+  // LABEL STATUT
+  // =========================================================
+
+  const getStatutLabel = (
+    statut,
+    langueResultat
+  ) => {
+
+    if (
+      langueResultat === "ar"
+    ) {
+
+      if (
+        statut === "confiant"
+      ) {
+        return "موثوق";
+      }
+
+      if (
+        statut === "incertain"
+      ) {
+        return "غير مؤكد";
+      }
+
+      if (
+        statut === "invalide"
+      ) {
+        return "غير معروف";
+      }
+    }
+
+
+    if (
+      langueResultat === "en"
+    ) {
+
+      if (
+        statut === "confiant"
+      ) {
+        return "Confident";
+      }
+
+      if (
+        statut === "incertain"
+      ) {
+        return "Uncertain";
+      }
+
+      if (
+        statut === "invalide"
+      ) {
+        return "Not recognized";
+      }
+    }
+
+
+    if (
+      statut === "confiant"
+    ) {
+      return "Confiant";
+    }
+
+    if (
+      statut === "incertain"
+    ) {
+      return "Incertain";
+    }
+
+    if (
+      statut === "invalide"
+    ) {
+      return "Non reconnue";
+    }
+
+
+    return statut;
   };
 
 
@@ -478,13 +574,16 @@ export default function ImportBatch() {
           </strong>
 
           <span>
-            Cliquez ici pour parcourir vos fichiers
+            Cliquez ici pour parcourir
+            vos fichiers
           </span>
 
           <input
             type="file"
             accept=".csv,.xls,.xlsx"
-            onChange={handleFileChange}
+            onChange={
+              handleFileChange
+            }
             hidden
           />
 
@@ -580,8 +679,11 @@ export default function ImportBatch() {
               Colonne des réclamations
             </label>
 
+
             <select
-              value={colonneTexte}
+              value={
+                colonneTexte
+              }
 
               onChange={(event) => {
 
@@ -590,8 +692,6 @@ export default function ImportBatch() {
                 );
 
                 setResultats([]);
-
-                setProgression(0);
 
                 setErreurClassification(
                   ""
@@ -660,33 +760,48 @@ export default function ImportBatch() {
             }}
           >
 
+
             {/* FR */}
 
             <button
               type="button"
+
               onClick={() =>
                 changerLangue("fr")
               }
+
               style={{
-                padding: "10px 18px",
-                borderRadius: "10px",
+                padding:
+                  "10px 18px",
+
+                borderRadius:
+                  "10px",
+
                 border:
                   langue === "fr"
                     ? "1px solid #2563eb"
                     : "1px solid #cbd5e1",
+
                 background:
                   langue === "fr"
                     ? "#2563eb"
                     : "#ffffff",
+
                 color:
                   langue === "fr"
                     ? "#ffffff"
                     : "#334155",
-                fontWeight: "600",
-                cursor: "pointer",
+
+                fontWeight:
+                  "600",
+
+                cursor:
+                  "pointer",
               }}
             >
+
               Français
+
             </button>
 
 
@@ -694,29 +809,43 @@ export default function ImportBatch() {
 
             <button
               type="button"
+
               onClick={() =>
                 changerLangue("ar")
               }
+
               style={{
-                padding: "10px 18px",
-                borderRadius: "10px",
+                padding:
+                  "10px 18px",
+
+                borderRadius:
+                  "10px",
+
                 border:
                   langue === "ar"
                     ? "1px solid #2563eb"
                     : "1px solid #cbd5e1",
+
                 background:
                   langue === "ar"
                     ? "#2563eb"
                     : "#ffffff",
+
                 color:
                   langue === "ar"
                     ? "#ffffff"
                     : "#334155",
-                fontWeight: "600",
-                cursor: "pointer",
+
+                fontWeight:
+                  "600",
+
+                cursor:
+                  "pointer",
               }}
             >
+
               العربية
+
             </button>
 
 
@@ -724,29 +853,43 @@ export default function ImportBatch() {
 
             <button
               type="button"
+
               onClick={() =>
                 changerLangue("en")
               }
+
               style={{
-                padding: "10px 18px",
-                borderRadius: "10px",
+                padding:
+                  "10px 18px",
+
+                borderRadius:
+                  "10px",
+
                 border:
                   langue === "en"
                     ? "1px solid #2563eb"
                     : "1px solid #cbd5e1",
+
                 background:
                   langue === "en"
                     ? "#2563eb"
                     : "#ffffff",
+
                 color:
                   langue === "en"
                     ? "#ffffff"
                     : "#334155",
-                fontWeight: "600",
-                cursor: "pointer",
+
+                fontWeight:
+                  "600",
+
+                cursor:
+                  "pointer",
               }}
             >
+
               English
+
             </button>
 
           </div>
@@ -754,16 +897,25 @@ export default function ImportBatch() {
 
           <div
             style={{
-              marginTop: "14px",
-              fontSize: "14px",
-              color: "#64748b",
+              marginTop:
+                "14px",
+
+              fontSize:
+                "14px",
+
+              color:
+                "#64748b",
             }}
           >
 
             Langue sélectionnée :{" "}
 
             <strong>
-              {getLangueLabel(langue)}
+
+              {getLangueLabel(
+                langue
+              )}
+
             </strong>
 
           </div>
@@ -863,11 +1015,13 @@ export default function ImportBatch() {
                               : "ltr"
                           }
                         >
+
                           {String(
                             ligne[
                               colonneTexte
                             ]
                           )}
+
                         </td>
 
                       </tr>
@@ -882,12 +1036,14 @@ export default function ImportBatch() {
           </div>
 
 
-          {lignesValides.length > 10 && (
+          {lignesValides.length >
+            10 && (
 
             <div className="preview-information">
 
-              Aperçu limité aux 10 premières
-              réclamations sur{" "}
+              Aperçu limité aux
+              10 premières réclamations
+              sur{" "}
               {lignesValides.length}.
 
             </div>
@@ -895,7 +1051,9 @@ export default function ImportBatch() {
           )}
 
 
-          {/* ACTION */}
+          {/* =================================================
+              ACTION
+          ================================================= */}
 
           <div className="batch-actions">
 
@@ -922,17 +1080,22 @@ export default function ImportBatch() {
 
             <button
               type="button"
-              className="batch-classify-button"
+
+              className="
+                batch-classify-button
+              "
+
               onClick={
                 classifierToutesLesReclamations
               }
+
               disabled={
                 classificationEnCours
               }
             >
 
               {classificationEnCours
-                ? `Classification... ${progression} %`
+                ? "Classification en cours..."
                 : `Classifier les ${lignesValides.length} réclamations`
               }
 
@@ -941,7 +1104,9 @@ export default function ImportBatch() {
           </div>
 
 
-          {/* PROGRESSION */}
+          {/* =================================================
+              TRAITEMENT EN COURS
+          ================================================= */}
 
           {classificationEnCours && (
 
@@ -950,25 +1115,9 @@ export default function ImportBatch() {
               <div className="batch-progress-info">
 
                 <span>
-                  Classification en cours...
+                  Classification en cours
+                  dans le backend...
                 </span>
-
-                <strong>
-                  {progression} %
-                </strong>
-
-              </div>
-
-
-              <div className="batch-progress-track">
-
-                <div
-                  className="batch-progress-bar"
-                  style={{
-                    width:
-                      `${progression}%`,
-                  }}
-                />
 
               </div>
 
@@ -977,7 +1126,9 @@ export default function ImportBatch() {
           )}
 
 
-          {/* ERREUR CLASSIFICATION */}
+          {/* =================================================
+              ERREUR CLASSIFICATION
+          ================================================= */}
 
           {erreurClassification && (
 
@@ -1082,38 +1233,62 @@ export default function ImportBatch() {
                     index
                   ) => {
 
+
                     const score =
                       resultat.score <= 1
-                        ? resultat.score * 100
+
+                        ? resultat.score *
+                          100
+
                         : resultat.score;
 
 
                     return (
 
-                      <tr key={index}>
+                      <tr
+                        key={
+                          `${resultat.texte}-${index}`
+                        }
+                      >
+
 
                         <td>
+
                           {index + 1}
+
                         </td>
 
+
+                        {/* TEXTE */}
 
                         <td
                           dir={
-                            resultat.langue === "ar"
+                            resultat.langue ===
+                            "ar"
+
                               ? "rtl"
+
                               : "ltr"
                           }
                         >
+
                           {resultat.texte}
+
                         </td>
 
 
+                        {/* LANGUE */}
+
                         <td>
+
                           {getLangueLabel(
                             resultat.langue
                           )}
+
                         </td>
 
+
+                        {/* CATÉGORIE */}
 
                         <td>
 
@@ -1128,38 +1303,59 @@ export default function ImportBatch() {
                         </td>
 
 
+                        {/* CONFIANCE */}
+
                         <td>
 
                           <span
                             className={
                               score >= 50
+
                                 ? "score-badge score-success"
+
                                 : "score-badge score-warning"
                             }
                           >
 
-                            {score.toFixed(1)} %
+                            {score.toFixed(
+                              1
+                            )}{" "}
+                            %
 
                           </span>
 
                         </td>
 
+
+                        {/* STATUT */}
 
                         <td>
 
                           <span
                             className={
-                              resultat.statut === "confiant"
+                              resultat.statut ===
+                              "confiant"
+
                                 ? "score-badge score-success"
-                                : "score-badge score-warning"
+
+                                : resultat.statut ===
+                                  "invalide"
+
+                                  ? "score-badge score-warning"
+
+                                  : "score-badge score-warning"
                             }
                           >
 
-                            {resultat.statut}
+                            {getStatutLabel(
+                              resultat.statut,
+                              resultat.langue
+                            )}
 
                           </span>
 
                         </td>
+
 
                       </tr>
 

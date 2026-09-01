@@ -1,10 +1,11 @@
 from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-
-from app.models import ReclamationRequest, ReclamationResponse, HistoriqueResponse
-from app.database import init_db, ajouter_reclamation, obtenir_historique
+from typing import Optional
+from app.models import ReclamationRequest, ReclamationResponse, HistoriqueResponse, ReclamationBatchRequest
+from app.database import init_db, ajouter_reclamation, obtenir_historique, obtenir_statistiques
 from app.ml_service import load_ml_components, predire_reclamation
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -89,28 +90,74 @@ def classer_reclamation(
             detail=str(e)
         )
 
-@app.get(
-    "/historique",
-    response_model=HistoriqueResponse
-)
+
+@app.post("/classer-batch")
+def classer_batch(payload: ReclamationBatchRequest):
+
+    resultats = []
+
+    for texte in payload.textes:
+
+        texte = str(texte).strip()
+
+        if not texte:
+            continue
+
+        categorie, score_confiance, statut = predire_reclamation(
+            texte,
+            payload.langue
+        )
+
+        reclamation = ajouter_reclamation(
+            texte=texte,
+            langue=payload.langue,
+            categorie=categorie,
+            score_confiance=score_confiance,
+            statut=statut
+        )
+
+        resultats.append(
+            reclamation
+        )
+
+    return {
+        "total": len(resultats),
+        "langue": payload.langue,
+        "resultats": resultats
+    }
+
+@app.get("/historique")
 def historique(
-    limit: int = 20,
-    offset: int = 0
+    page: int = 1,
+    page_size: int = 10,
+    search: Optional[str] = None,
+    categorie: Optional[str] = None,
+    langue: Optional[str] = None,
+    confiance_min: Optional[float] = None,
+    date_filtre: Optional[str] = None
 ):
-    try:
-        return obtenir_historique(
-            limit=limit,
-            offset=offset
-        )
 
-    except Exception as e:
+    if page < 1:
+        page = 1
 
-        print(
-            "[Erreur /historique]",
-            str(e)
-        )
+    if page_size < 1:
+        page_size = 10
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+    if page_size > 100:
+        page_size = 100
+
+    return obtenir_historique(
+        page=page,
+        page_size=page_size,
+        search=search,
+        categorie=categorie,
+        langue=langue,
+        confiance_min=confiance_min,
+        date_filtre=date_filtre
+    )
+
+
+@app.get("/statistiques")
+def statistiques():
+
+    return obtenir_statistiques()

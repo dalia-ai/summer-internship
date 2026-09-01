@@ -1,432 +1,924 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import "./Historique.css";
 
+
 export default function Historique() {
-  const [reclamations, setReclamations] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [search, setSearch] = useState("");
-  const [categorie, setCategorie] = useState("");
-  const [confianceMin, setConfianceMin] = useState("");
-  const [dateFiltre, setDateFiltre] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  useEffect(() => {
-    chargerHistorique();
-  }, []);
 
-const chargerHistorique = async () => {
-  try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/historique?limit=1000&offset=0"
-    );
 
-    if (!response.ok) {
-      throw new Error(
-        `Erreur HTTP ${response.status}`
+  const [reclamations, setReclamations] =
+    useState([]);
+
+  const [total, setTotal] =
+    useState(0);
+
+  const [totalPages, setTotalPages] =
+    useState(0);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [categorie, setCategorie] =
+    useState("");
+
+  const [confianceMin, setConfianceMin] =
+    useState("");
+
+  const [dateFiltre, setDateFiltre] =
+    useState("");
+
+
+
+
+  const [currentPage, setCurrentPage] =
+    useState(1);
+
+  const [itemsPerPage, setItemsPerPage] =
+    useState(10);
+
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const categories = [
+    "Carte bancaire",
+    "Paiements par carte",
+    "Virements",
+    "Prélèvements",
+    "Retraits d'espèces",
+    "Recharges",
+    "Compte bancaire",
+    "Change et devises",
+    "Identité et sécurité",
+    "Services bancaires",
+  ];
+
+
+  
+
+  const chargerHistorique = async () => {
+
+    setLoading(true);
+    setError("");
+
+    try {
+
+
+      const params =
+        new URLSearchParams();
+
+
+      params.set(
+        "page",
+        String(currentPage)
       );
-    }
 
-    const data = await response.json();
 
-    setReclamations(
-      Array.isArray(data.reclamations)
-        ? data.reclamations
-        : []
-    );
+      params.set(
+        "page_size",
+        String(itemsPerPage)
+      );
+
+
+      // Recherche texte
+      if (search.trim()) {
+
+        params.set(
+          "search",
+          search.trim()
+        );
+      }
+
+
+      // Catégorie
+      if (categorie) {
+
+        params.set(
+          "categorie",
+          categorie
+        );
+      }
+
+
+      // Confiance minimale
+      if (confianceMin) {
+
+        params.set(
+          "confiance_min",
+          confianceMin
+        );
+      }
+
+
+      // Date
+      if (dateFiltre) {
+
+        params.set(
+          "date_filtre",
+          dateFiltre
+        );
+      }
+
+
+      const response =
+        await fetch(
+          `http://127.0.0.1:8000/historique?${params.toString()}`
+        );
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          `Erreur HTTP ${response.status}`
+        );
+      }
+
+
+      const data =
+        await response.json();
+
+
+      console.log(
+        "Historique reçu du backend :",
+        data
+      );
+
+
+
+      setReclamations(
+        Array.isArray(data.reclamations)
+          ? data.reclamations
+          : []
+      );
+
 
    
-    setTotal(
-      Number(data.total ?? 0)
-    );
 
-  } catch (error) {
-
-    console.error(
-      "Erreur chargement historique :",
-      error
-    );
-
-    setReclamations([]);
-    setTotal(0);
-  }
-};
-
-const formatDate = (dateValue) => {
-  if (!dateValue) {
-    return "-";
-  }
-
- 
-  const date = new Date(
-    String(dateValue).replace(" ", "T")
-  );
-
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return date.toLocaleString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-  // Liste des catégories disponibles
-const categories = [
-  "Carte bancaire",
-  "Paiements par carte",
-  "Virements",
-  "Prélèvements",
-  "Retraits d'espèces",
-  "Recharges",
-  "Compte bancaire",
-  "Change et devises",
-  "Identité et sécurité",
-  "Services bancaires",
-];
-
-  
-  const reclamationsFiltrees = useMemo(() => {
-  if (!Array.isArray(reclamations)) {
-    return [];
-  }
-
-  return reclamations.filter((reclamation) => {
-    const texte =
-      String(reclamation.texte ?? "").toLowerCase();
-
-    const categorieReclamation =
-      String(reclamation.categorie ?? "").toLowerCase();
-
-    const rechercheValide =
-      search.trim() === "" ||
-      texte.includes(search.toLowerCase()) ||
-      categorieReclamation.includes(search.toLowerCase());
-
-    const categorieValide =
-      categorie === "" ||
-      reclamation.categorie === categorie;
-
-    const confiance = Number(
-      reclamation.confiance ??
-      reclamation.score_confiance ??
-      reclamation.confidence ??
-      0
-    );
-
-    const confianceValide =
-      confianceMin === "" ||
-      confiance >= Number(confianceMin);
-
-      let dateValide = true;
-
-if (dateFiltre) {
-  if (!reclamation.date) {
-    dateValide = false;
-  } else {
-    const dateReclamation = String(reclamation.date).slice(0, 10);
-
-    dateValide = dateReclamation === dateFiltre;
-  }
-}
+      setTotal(
+        Number(
+          data.total ?? 0
+        )
+      );
 
 
-    return (
-      rechercheValide &&
-      categorieValide &&
-      confianceValide &&
-      dateValide
-    );
-  });
-}, [
-  reclamations,
-  search,
-  categorie,
-  confianceMin,
-  dateFiltre
-]);
 
-  
-  const totalPages = Math.max(
-    1,
-    Math.ceil(reclamationsFiltrees.length / itemsPerPage)
-  );
+      setTotalPages(
+        Number(
+          data.total_pages ?? 0
+        )
+      );
 
- 
-  const reclamationsPage = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
 
-    return reclamationsFiltrees.slice(startIndex, endIndex);
-  }, [reclamationsFiltrees, currentPage, itemsPerPage]);
+    } catch (error) {
 
-  
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, categorie, confianceMin, itemsPerPage, dateFiltre]);
+      console.error(
+        "Erreur chargement historique :",
+        error
+      );
 
-  
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
+
+      setError(
+        "Impossible de charger l'historique."
+      );
+
+
+      setReclamations([]);
+
+      setTotal(0);
+
+      setTotalPages(0);
+
+    } finally {
+
+      setLoading(false);
     }
-  }, [currentPage, totalPages]);
+  };
+
+
+
+  useEffect(() => {
+
+    chargerHistorique();
+
+  }, [
+    currentPage,
+    itemsPerPage,
+    search,
+    categorie,
+    confianceMin,
+    dateFiltre,
+  ]);
+
+
+ 
+
+  const formatDate = (dateValue) => {
+
+    if (!dateValue) {
+      return "-";
+    }
+
+
+    const date =
+      new Date(
+        String(
+          dateValue
+        ).replace(
+          " ",
+          "T"
+        )
+      );
+
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+
+      return "-";
+    }
+
+
+    return date.toLocaleString(
+      "fr-FR",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
+  };
+
+
+
 
   const resetFiltres = () => {
+
     setSearch("");
+
     setCategorie("");
+
     setConfianceMin("");
+
+    setDateFiltre("");
+
     setCurrentPage(1);
   };
 
+
+
+
   const getPages = () => {
+
     const pages = [];
 
-    for (let i = 1; i <= totalPages; i++) {
+
+    for (
+      let i = 1;
+      i <= totalPages;
+      i++
+    ) {
+
       if (
         i === 1 ||
         i === totalPages ||
-        (i >= currentPage - 2 && i <= currentPage + 2)
+        (
+          i >= currentPage - 2 &&
+          i <= currentPage + 2
+        )
       ) {
+
         pages.push(i);
       }
     }
 
+
     return pages;
   };
 
-  const debut =
-    reclamationsFiltrees.length === 0
-      ? 0
-      : (currentPage - 1) * itemsPerPage + 1;
 
-  const fin = Math.min(
-    currentPage * itemsPerPage,
-    reclamationsFiltrees.length
-  );
+
+
+  const debut =
+    total === 0
+      ? 0
+      : (
+          currentPage - 1
+        ) *
+          itemsPerPage +
+        1;
+
+
+  const fin =
+    Math.min(
+      currentPage *
+        itemsPerPage,
+      total
+    );
+
+
+
 
   return (
+
     <div className="historique-container">
 
+
+
       <div className="historique-header">
+
         <div>
-          <h1>Historique des réclamations</h1>
+
+          <h1>
+            Historique des réclamations
+          </h1>
+
           <p>
-            Consultez et filtrez les réclamations analysées.
+            Consultez et filtrez les
+            réclamations analysées.
           </p>
+
         </div>
+
       </div>
 
-      {/* FILTRES */}
+
+
       <div className="historique-filters">
 
+
+        {/* RECHERCHE */}
+
         <div className="filter-group">
-          <label>Recherche</label>
+
+          <label>
+            Recherche
+          </label>
 
           <input
             type="text"
-            placeholder="Rechercher une réclamation..."
+
+            placeholder="
+              Rechercher une réclamation...
+            "
+
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+
+            onChange={(e) => {
+
+              setSearch(
+                e.target.value
+              );
+
+              setCurrentPage(1);
+            }}
           />
+
         </div>
 
+
+        {/* CATÉGORIE */}
+
         <div className="filter-group">
-          <label>Catégorie</label>
+
+          <label>
+            Catégorie
+          </label>
 
           <select
             value={categorie}
-            onChange={(e) => setCategorie(e.target.value)}
-          >
-            <option value="">Toutes les catégories</option>
 
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
+            onChange={(e) => {
+
+              setCategorie(
+                e.target.value
+              );
+
+              setCurrentPage(1);
+            }}
+          >
+
+            <option value="">
+              Toutes les catégories
+            </option>
+
+
+            {categories.map(
+              (cat) => (
+
+                <option
+                  key={cat}
+                  value={cat}
+                >
+                  {cat}
+                </option>
+
+              )
+            )}
+
           </select>
+
         </div>
 
+
+        {/* CONFIANCE */}
+
         <div className="filter-group">
-          <label>Confiance minimale</label>
+
+          <label>
+            Confiance minimale
+          </label>
 
           <select
             value={confianceMin}
-            onChange={(e) => setConfianceMin(e.target.value)}
+
+            onChange={(e) => {
+
+              setConfianceMin(
+                e.target.value
+              );
+
+              setCurrentPage(1);
+            }}
           >
-            <option value="">Tous les scores</option>
-            <option value="0.5">≥ 50 %</option>
-            <option value="0.7">≥ 70 %</option>
-            <option value="0.8">≥ 80 %</option>
-            <option value="0.9">≥ 90 %</option>
+
+            <option value="">
+              Tous les scores
+            </option>
+
+            <option value="0.5">
+              ≥ 50 %
+            </option>
+
+            <option value="0.7">
+              ≥ 70 %
+            </option>
+
+            <option value="0.8">
+              ≥ 80 %
+            </option>
+
+            <option value="0.9">
+              ≥ 90 %
+            </option>
+
           </select>
+
         </div>
 
+
+        {/* DATE */}
+
         <div className="filter-group">
-          <label>Date</label>
+
+          <label>
+            Date
+          </label>
 
           <input
             type="date"
+
             value={dateFiltre}
-            onChange={(e) => setDateFiltre(e.target.value)}
+
+            onChange={(e) => {
+
+              setDateFiltre(
+                e.target.value
+              );
+
+              setCurrentPage(1);
+            }}
           />
+
         </div>
+
       </div>
 
-      
+
+      {(search ||
+        categorie ||
+        confianceMin ||
+        dateFiltre) && (
+
+        <div
+          style={{
+            marginBottom:
+              "16px",
+          }}
+        >
+
+          <button
+            type="button"
+            onClick={resetFiltres}
+          >
+            Réinitialiser les filtres
+          </button>
+
+        </div>
+
+      )}
+
+
+
+
       <div className="history-info">
+
         <span>
-  {search || categorie || confianceMin || dateFiltre
-    ? `${reclamationsFiltrees.length} sur ${total} réclamations`
-    : `${total} réclamation${total > 1 ? "s" : ""}`
-  }
-</span>
+
+          {total} réclamation
+
+          {total > 1
+            ? "s"
+            : ""}
+
+        </span>
+
 
         <div className="items-per-page">
-          <label>Afficher</label>
+
+          <label>
+            Afficher
+          </label>
 
           <select
-            value={itemsPerPage}
-            onChange={(e) =>
-              setItemsPerPage(Number(e.target.value))
+            value={
+              itemsPerPage
             }
+
+            onChange={(e) => {
+
+              setItemsPerPage(
+                Number(
+                  e.target.value
+                )
+              );
+
+              setCurrentPage(1);
+            }}
           >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
+
+            <option value={5}>
+              5
+            </option>
+
+            <option value={10}>
+              10
+            </option>
+
+            <option value={20}>
+              20
+            </option>
+
+            <option value={50}>
+              50
+            </option>
+
           </select>
 
-          <span>par page</span>
+          <span>
+            par page
+          </span>
+
         </div>
+
       </div>
 
-      {/* TABLE */}
+
+
+      {error && (
+
+        <div className="stats-error">
+
+          {error}
+
+        </div>
+
+      )}
+
+
+
       <div className="table-container">
+
         <table className="historique-table">
+
+
           <thead>
+
             <tr>
-              
-              <th>Réclamation</th>
-              <th>Catégorie</th>
-              <th>Confiance</th>
-              <th>Date</th>
+
+              <th>
+                Réclamation
+              </th>
+
+              <th>
+                Catégorie
+              </th>
+
+              <th>
+                Confiance
+              </th>
+
+              <th>
+                Date
+              </th>
+
             </tr>
+
           </thead>
 
+
           <tbody>
-            {reclamationsPage.length > 0 ? (
-              reclamationsPage.map((reclamation) => {
-                const confiance =
-                  reclamation.confiance ??
-                  reclamation.score_confiance ??
-                  reclamation.confidence ??
-                  0;
 
-                return (
-                  <tr key={reclamation.id}>
-                    
 
-                    <td className="reclamation-text">
-                      {reclamation.texte}
-                    </td>
+            {/* CHARGEMENT */}
 
-                    <td>
-                      <span className="category-badge">
-                        {reclamation.categorie}
-                      </span>
-                    </td>
+            {loading ? (
 
-                    <td>
-                      <strong>
-                        {(Number(confiance) * 100).toFixed(1)} %
-                      </strong>
-                    </td>
-
-                    <td className="date-cell">
-  {formatDate(reclamation.date)}
-</td>
-                  </tr>
-                );
-              })
-            ) : (
               <tr>
-                <td colSpan="4" className="empty-history">
-                  Aucune réclamation trouvée.
+
+                <td
+                  colSpan="4"
+                  className="empty-history"
+                >
+
+                  Chargement...
+
                 </td>
+
               </tr>
+
+            ) : reclamations.length > 0 ? (
+
+
+              reclamations.map(
+                (reclamation) => {
+
+
+                  const confiance =
+                    Number(
+                      reclamation
+                        .score_confiance ??
+                      reclamation
+                        .confiance ??
+                      reclamation
+                        .confidence ??
+                      0
+                    );
+
+
+                  const confiancePourcentage =
+                    confiance <= 1
+                      ? confiance * 100
+                      : confiance;
+
+
+                  return (
+
+                    <tr
+                      key={
+                        reclamation.id
+                      }
+                    >
+
+
+                      {/* TEXTE */}
+
+                      <td className="reclamation-text">
+
+                        {reclamation.texte}
+
+                      </td>
+
+
+                      {/* CATÉGORIE */}
+
+                      <td>
+
+                        <span className="category-badge">
+
+                          {
+                            reclamation.categorie
+                          }
+
+                        </span>
+
+                      </td>
+
+
+                      {/* CONFIANCE */}
+
+                      <td>
+
+                        <strong>
+
+                          {
+                            confiancePourcentage
+                              .toFixed(1)
+                          }{" "}
+                          %
+
+                        </strong>
+
+                      </td>
+
+
+                      {/* DATE */}
+
+                      <td className="date-cell">
+
+                        {
+                          formatDate(
+                            reclamation.date
+                          )
+                        }
+
+                      </td>
+
+
+                    </tr>
+
+                  );
+                }
+              )
+
+            ) : (
+
+              <tr>
+
+                <td
+                  colSpan="4"
+                  className="empty-history"
+                >
+
+                  Aucune réclamation trouvée.
+
+                </td>
+
+              </tr>
+
             )}
+
           </tbody>
+
         </table>
+
       </div>
 
-      {/* PAGINATION */}
-      {reclamationsFiltrees.length > 0 && (
+
+
+      {total > 0 &&
+        totalPages > 0 && (
+
         <div className="pagination-container">
 
+
+          {/* INFORMATIONS */}
+
           <div className="pagination-info">
-            Affichage de {debut} à {fin} sur{" "}
-            {reclamationsFiltrees.length} résultats
+
+            Affichage de{" "}
+            {debut} à {fin}
+            {" "}sur{" "}
+            {total} résultats
+
           </div>
+
+
+          {/* BOUTONS */}
 
           <div className="pagination">
 
+
+            {/* PRÉCÉDENT */}
+
             <button
+              type="button"
+
               onClick={() =>
-                setCurrentPage((page) =>
-                  Math.max(page - 1, 1)
+                setCurrentPage(
+                  (page) =>
+                    Math.max(
+                      page - 1,
+                      1
+                    )
                 )
               }
-              disabled={currentPage === 1}
+
+              disabled={
+                currentPage <= 1
+              }
             >
+
               ← Précédent
+
             </button>
 
-            {getPages().map((page, index, pages) => {
-              const previousPage = pages[index - 1];
 
-              return (
-                <span key={page}>
-                  {previousPage &&
-                    page - previousPage > 1 && (
+            {/* NUMÉROS DE PAGES */}
+
+            {getPages().map(
+              (
+                page,
+                index,
+                pages
+              ) => {
+
+
+                const previousPage =
+                  pages[index - 1];
+
+
+                return (
+
+                  <span key={page}>
+
+
+                    {/* ... */}
+
+                    {previousPage &&
+                      page -
+                        previousPage >
+                        1 && (
+
                       <span className="pagination-dots">
+
                         ...
+
                       </span>
+
                     )}
 
-                  <button
-                    className={
-                      currentPage === page
-                        ? "page-button active"
-                        : "page-button"
-                    }
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </button>
-                </span>
-              );
-            })}
+
+                    {/* NUMÉRO */}
+
+                    <button
+                      type="button"
+
+                      className={
+                        currentPage ===
+                        page
+
+                          ? "page-button active"
+
+                          : "page-button"
+                      }
+
+                      onClick={() =>
+                        setCurrentPage(
+                          page
+                        )
+                      }
+                    >
+
+                      {page}
+
+                    </button>
+
+
+                  </span>
+
+                );
+              }
+            )}
+
+
+            {/* SUIVANT */}
 
             <button
+              type="button"
+
               onClick={() =>
-                setCurrentPage((page) =>
-                  Math.min(page + 1, totalPages)
+                setCurrentPage(
+                  (page) =>
+                    Math.min(
+                      page + 1,
+                      totalPages
+                    )
                 )
               }
-              disabled={currentPage === totalPages}
+
+              disabled={
+                currentPage >=
+                totalPages
+              }
             >
+
               Suivant →
+
             </button>
 
           </div>
+
         </div>
+
       )}
+
     </div>
   );
 }

@@ -138,22 +138,114 @@ def ajouter_reclamation(
     }
 
 def obtenir_historique(
-    limit: int = 20,
-    offset: int = 0
+    page: int = 1,
+    page_size: int = 10,
+    search: str | None = None,
+    categorie: str | None = None,
+    langue: str | None = None,
+    confiance_min: float | None = None,
+    date_filtre: str | None = None
 ):
+
+    offset = (page - 1) * page_size
+
+    conditions = []
+    params = []
+
+    if search:
+
+        conditions.append(
+            """
+            (
+                LOWER(texte) LIKE ?
+                OR LOWER(categorie) LIKE ?
+            )
+            """
+        )
+
+        valeur = f"%{search.lower()}%"
+
+        params.extend([
+            valeur,
+            valeur
+        ])
+
+
+    if categorie:
+
+        conditions.append(
+            "categorie = ?"
+        )
+
+        params.append(
+            categorie
+        )
+
+
+    if langue:
+
+        conditions.append(
+            "langue = ?"
+        )
+
+        params.append(
+            langue
+        )
+
+
+    if confiance_min is not None:
+
+        conditions.append(
+            "score_confiance >= ?"
+        )
+
+        params.append(
+            confiance_min
+        )
+
+
+    if date_filtre:
+
+        conditions.append(
+            "DATE(date) = ?"
+        )
+
+        params.append(
+            date_filtre
+        )
+
+
+    where_sql = ""
+
+    if conditions:
+
+        where_sql = (
+            " WHERE "
+            + " AND ".join(conditions)
+        )
+
+
     with get_connection() as conn:
+
         cursor = conn.cursor()
 
-        # Nombre total de réclamations
+
+        # Nombre total après filtrage
         cursor.execute(
-            "SELECT COUNT(*) FROM reclamations"
+            f"""
+            SELECT COUNT(*)
+            FROM reclamations
+            {where_sql}
+            """,
+            params
         )
 
         total = cursor.fetchone()[0]
 
-        # Récupération des réclamations
+
+        # Résultats de la page
         cursor.execute(
-            """
+            f"""
             SELECT
                 id,
                 texte,
@@ -163,33 +255,166 @@ def obtenir_historique(
                 statut,
                 date
             FROM reclamations
+            {where_sql}
             ORDER BY id DESC
-            LIMIT ? OFFSET ?
+            LIMIT ?
+            OFFSET ?
             """,
-            (
-                limit,
+            params + [
+                page_size,
                 offset
-            )
+            ]
         )
 
         rows = cursor.fetchall()
 
-        reclamations = []
 
-        for row in rows:
-            reclamations.append({
-                "id": row["id"],
-                "texte": row["texte"],
-                "langue": row["langue"],
-                "categorie": row["categorie"],
-                "score_confiance": float(
-                    row["score_confiance"]
-                ),
-                "statut": row["statut"],
-                "date": row["date"]
-            })
+    reclamations = [
+        dict(row)
+        for row in rows
+    ]
+
+
+    total_pages = (
+        (total + page_size - 1)
+        // page_size
+        if total > 0
+        else 0
+    )
+
 
     return {
+        "page": page,
+        "page_size": page_size,
         "total": total,
+        "total_pages": total_pages,
         "reclamations": reclamations
     }
+
+
+def obtenir_statistiques():
+
+    with get_connection() as conn:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM reclamations
+            """
+        )
+
+        total = cursor.fetchone()[0]
+
+
+        cursor.execute(
+            """
+            SELECT AVG(score_confiance)
+            FROM reclamations
+            """
+        )
+
+        moyenne = cursor.fetchone()[0]
+
+        confiance_moyenne = (
+            float(moyenne)
+            if moyenne is not None
+            else 0.0
+        )
+
+        cursor.execute(
+            """
+            SELECT
+                categorie,
+                COUNT(*) AS nombre
+            FROM reclamations
+            GROUP BY categorie
+            ORDER BY nombre DESC
+            """
+        )
+
+        par_categorie = [
+            dict(row)
+            for row in cursor.fetchall()
+        ]
+
+
+        cursor.execute(
+            """
+            SELECT
+                langue,
+                COUNT(*) AS nombre
+            FROM reclamations
+            GROUP BY langue
+            ORDER BY nombre DESC
+            """
+        )
+
+        par_langue = [
+            dict(row)
+            for row in cursor.fetchall()
+        ]
+
+
+       
+
+        cursor.execute(
+            """
+            SELECT
+                statut,
+                COUNT(*) AS nombre
+            FROM reclamations
+            GROUP BY statut
+            ORDER BY nombre DESC
+            """
+        )
+
+        par_statut = [
+            dict(row)
+            for row in cursor.fetchall()
+        ]
+
+
+
+        cursor.execute(
+            """
+            SELECT
+                DATE(date) AS date,
+                COUNT(*) AS nombre
+            FROM reclamations
+            WHERE date IS NOT NULL
+            GROUP BY DATE(date)
+            ORDER BY DATE(date) ASC
+            """
+        )
+
+        par_date = [
+            dict(row)
+            for row in cursor.fetchall()
+        ]
+
+
+    return {
+
+        "total":
+            total,
+
+        "confiance_moyenne":
+            confiance_moyenne,
+
+        "par_categorie":
+            par_categorie,
+
+        "par_langue":
+            par_langue,
+
+        "par_statut":
+            par_statut,
+
+        "par_date":
+            par_date
+    }
+
+
+ 
