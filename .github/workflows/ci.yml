@@ -11,7 +11,9 @@ on:
       - develop
       - main
 
+
 jobs:
+
   security:
     name: Secret Scan
     runs-on: ubuntu-latest
@@ -26,6 +28,7 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
   backend:
     name: Backend CI
@@ -56,9 +59,29 @@ jobs:
           python -c "import sklearn"
           python -c "import joblib"
           python -c "import numpy"
+          python -c "import pytest"
+          python -c "import pytest_cov"
+          python -c "import httpx"
 
       - name: Check Python syntax
         run: python -m compileall backend/app
+
+      - name: Run backend tests with coverage
+        env:
+          PYTHONPATH: backend
+        run: |
+          pytest backend/tests -v \
+            --cov=backend/app \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=70
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: coverage.xml
+
 
   frontend:
     name: Frontend CI
